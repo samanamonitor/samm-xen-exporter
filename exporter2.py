@@ -11,7 +11,15 @@ class Xen:
             self._host = host
             self._verify_ssl = verify_ssl
             self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not verify_ssl)
-            self.session.xenapi.login_with_password(user, password)
+            try:
+                  self.session.xenapi.login_with_password(user, password)
+            except XenAPI.XenAPI.Failure as e:
+                  d = eval(str(e))
+                  if len(d) == 2:
+                        if d[0] == 'HOST_IS_SLAVE':
+                              print(f"WARNING: This host is slave. Connecting to '{d[1]}'")
+                              self.session = XenAPI.Session(f"https://{d[1]}", ignore_ssl=not verify_ssl)
+                              self.session.xenapi.login_with_password(user, password)
             self.session_id = self.session._session
 
       @property
@@ -55,6 +63,9 @@ class Xen:
 
       def __exit__(self, exc_type, exc_value, traceback):
             self.xenapi.session.logout()
+
+
+
 
 
 #xenhosts=xen.xenapi.host.get_all()
