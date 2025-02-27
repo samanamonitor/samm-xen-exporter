@@ -1,16 +1,14 @@
 import os
 from exporter2 import Xen
+from prometheus_client import Gauge, start_http_server
+import time
+
 xen_password = os.getenv("XEN_PASSWORD", "")
 xen_user = os.getenv("XEN_USER", "root")
 xen_host = os.getenv("XEN_HOST", "localhost")
 xen_mode = os.getenv("XEN_MODE", "host")
 verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
-x=Xen(xen_host, xen_user, xen_password, verify_ssl)
-xenhosts=x.xenapi.host.get_all()
-h0=xenhosts[0]
-v0=x.xenapi.host.get_resident_VMs(h0)[0]
 
-from prometheus_client import Gauge, start_http_server
 sr_metric_names = [
     "avgqu",
     "inflight",
@@ -64,7 +62,6 @@ def legend_to_metric(legend):
     return "xen_" + collector_type + "_" + metric_name, labels, label_values
 
 def update_metrics(legends, values):
-    all = []
     for i in range(len(legends)):
         legend = legends[i]
         value = values[i]
@@ -72,15 +69,15 @@ def update_metrics(legends, values):
         m = all_metrics.get(metric_name)
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
-        all.append( { "legend": legend, "metric_name": metric_name, "labels": labels, "label_values": label_values})
         m.labels(*label_values).set(value)
-    return all
 
-
+x=Xen(xen_host, xen_user, xen_password, verify_ssl)
 start_http_server(8000)
 all_metrics = {}
+xenhosts=x.xenapi.host.get_all()
 
-
-updates=x.getUpdatesRRD(h0)
-all = update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
-
+while True:
+    for hx in xenhosts:
+        updates=x.getUpdatesRRD(hx)
+        update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
+    time.sleep(60)
