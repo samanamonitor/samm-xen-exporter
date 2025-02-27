@@ -4,6 +4,7 @@ import XenAPI
 import urllib.request
 import ssl
 import json
+import time
 
 class Xen:
       def __init__(self, host, user, password, verify_ssl=True):
