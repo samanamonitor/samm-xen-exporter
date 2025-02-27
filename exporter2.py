@@ -29,10 +29,10 @@ class Xen:
             kwargs = {}
             if not self._verify_ssl:
                   kwargs['context'] = ssl._create_unverified_context()
-            vmuuid=xen.xenapi.VM.get_record(vm).get('uuid')
+            vmuuid=self.xenapi.VM.get_record(vm).get('uuid')
             if vmuuid is None:
                   raise ValueError(f"VM '{vm}' could not be found")
-            host_ip = xen.xenapi.PIF.get_record(xen.xenapi.host.get_management_interface(host)).get('IP')
+            host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
             if host_ip is None:
                   raise ValueError(f"Unable to get IP for host '{host}'")
             res=urllib.request.urlopen(f"https://{host_ip}/vm_rrd?session_id={self.session_id}&uuid={vmuuid}&json=true", **kwargs)
@@ -41,7 +41,7 @@ class Xen:
             kwargs = {}
             if not self._verify_ssl:
                   kwargs['context'] = ssl._create_unverified_context()
-            host_ip = xen.xenapi.PIF.get_record(xen.xenapi.host.get_management_interface(host)).get('IP')
+            host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
             if host_ip is None:
                   raise ValueError(f"Unable to get IP for host '{host}'")
             res=urllib.request.urlopen(f"https://{host_ip}/rrd_updates?session_id={self.session_id}&json=true&start={int(time.time()) - 10}&cf=AVERAGE&host=true", **kwargs)
@@ -50,7 +50,7 @@ class Xen:
             return self
 
       def __exit__(self, exc_type, exc_value, traceback):
-            self.session.xenapi.session.logout()
+            self.xenapi.session.logout()
 
 
 #xenhosts=xen.xenapi.host.get_all()
