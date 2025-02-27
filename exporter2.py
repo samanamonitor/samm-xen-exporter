@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import XenAPI
-import urllib
+import urllib.request
 import ssl
 
 class Xen:
