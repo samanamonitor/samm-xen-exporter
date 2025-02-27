@@ -23,7 +23,7 @@ class Xen:
             res=urllib.request.urlopen(f"https://{self._host}/host_rrd?session_id={self.session_id}&json=true", **kwargs)
             return json.load(res)
 
-      def getVmRRD(self, host, vm)
+      def getVmRRD(self, host, vm):
             #xen.xenapi.host.get_resident_VMs(xen.xenapi.host.get_all()[0])[0])['uuid']
             kwargs = {}
             if not self._verify_ssl:
