@@ -3,6 +3,7 @@
 import XenAPI
 import urllib.request
 import ssl
+import json
 
 class Xen:
       def __init__(self, host, user, password, verify_ssl=True):
@@ -36,6 +37,7 @@ class Xen:
             if host_ip is None:
                   raise ValueError(f"Unable to get IP for host '{host}'")
             res=urllib.request.urlopen(f"https://{host_ip}/vm_rrd?session_id={self.session_id}&uuid={vmuuid}&json=true", **kwargs)
+            return json.load(res)
 
       def getUpdatesRRD(self, host):
             kwargs = {}
@@ -45,6 +47,7 @@ class Xen:
             if host_ip is None:
                   raise ValueError(f"Unable to get IP for host '{host}'")
             res=urllib.request.urlopen(f"https://{host_ip}/rrd_updates?session_id={self.session_id}&json=true&start={int(time.time()) - 10}&cf=AVERAGE&host=true", **kwargs)
+            return json.load(res)
 
       def __enter__(self):
             return self
