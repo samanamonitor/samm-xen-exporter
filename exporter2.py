@@ -31,7 +31,10 @@ class Xen:
             kwargs = {}
             if not self._verify_ssl:
                   kwargs['context'] = ssl._create_unverified_context()
-            res=urllib.request.urlopen(f"https://{self._host}/host_rrd?session_id={self.session_id}&json=true", **kwargs)
+            host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
+            if host_ip is None:
+                  raise ValueError(f"Unable to get IP for host '{host}'")
+            res=urllib.request.urlopen(f"https://{host_ip}/host_rrd?session_id={self.session_id}&json=true", **kwargs)
             return json.load(res)
 
       def getVmRRD(self, host, vm):
