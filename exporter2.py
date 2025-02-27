@@ -2,6 +2,7 @@
 
 import XenAPI
 import urllib
+import ssl
 
 class Xen:
       def __init__(self, host, user, password, verify_ssl=True):
