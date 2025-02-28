@@ -73,7 +73,7 @@ info_labels = {
 }
 
 all_metrics = {}
-host_info = Gauge("xen_host_info", "Information about the XenServer Host", )
+host_info = Gauge("xen_host_info", "Information about the XenServer Host", list(e.info_labels['host'].keys()))
 
 def recget(d, key, default=None):
     keys = key.split(".")
