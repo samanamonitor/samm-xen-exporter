@@ -20,6 +20,67 @@ sr_metric_names = [
     "write"
 ]
 
+info_labels = {
+      "vm": [
+            "uuid",
+            "name_label",
+            "resident_on",
+            "power_state"
+      ],
+      "VM_guest_metrics": [
+            "uuid",
+            "os_version.distro",
+            "os_version.major",
+            "os_version.minor",
+            "os_version.build",
+            "netbios_name.host_name",
+            "PV_drivers_version.major",
+            "PV_drivers_version.minor",
+            "PV_drivers_version.micro",
+            "PV_drivers_version.build",
+      ],
+      "host": [
+            "uuid",
+            "name_label",
+            "API_version_major",
+            "API_version_minor",
+            "API_version_vendor",
+            "software_version.product_version",
+            "software_version.platform_name",
+            "software_version.platform_version",
+            "software_version.xapi",
+            "software_version.xapi_build",
+            "software_version.xen",
+            "software_version.linux",
+            "software_version.network_backend",
+            "software_version.db_schema",
+            "cpu_info.cpu_count",
+            "cpu_info.socket_count",
+            "cpu_info.threads_per_core",
+            "cpu_info.vendor",
+            "cpu_info.speed",
+            "cpu_info.modelname",
+            "other_config.multipathing",
+            "other_config.mpath_boot",
+            "hostname",
+            "address",
+            "bios_strings.bios-vendor",
+            "bios_strings.bios-version",
+            "bios_strings.system-manufacturer",
+            "bios_strings.system-product-name",
+            "bios_strings.system-serial-number",
+      ]
+}
+
+all_metrics = {}
+
+def recget(d, key):
+    keys = key.split(".")
+    v = d
+    for k in keys:
+        v = v.get(k, {})
+    return v
+
 def legend_to_metric(legend):
     data = legend.split(':')
     collector_type = data[1]
@@ -71,13 +132,21 @@ def update_metrics(legends, values):
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
         m.labels(*label_values).set(value)
 
+
+def main():
+    while True:
+        xenhosts=x.xenapi.host.get_all()
+        for hx in xenhosts:
+            hdata = x.xenapi.host.get_record(hx)
+            labels = {}
+
+
+            updates=x.getUpdatesRRD(hx)
+            update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
+        time.sleep(60)
+
 x=Xen(xen_host, xen_user, xen_password, verify_ssl)
 start_http_server(8000)
-all_metrics = {}
-xenhosts=x.xenapi.host.get_all()
+if __name__ == "__main__":
+    main()
 
-while True:
-    for hx in xenhosts:
-        updates=x.getUpdatesRRD(hx)
-        update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
-    time.sleep(60)
