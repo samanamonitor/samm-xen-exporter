@@ -74,11 +74,13 @@ info_labels = {
 
 all_metrics = {}
 
-def recget(d, key):
+def recget(d, key, default=None):
     keys = key.split(".")
     v = d
     for k in keys:
-        v = v.get(k, {})
+        if k not in v:
+            return default
+        v = v.get(k)
     return v
 
 def legend_to_metric(legend):
