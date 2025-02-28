@@ -74,6 +74,7 @@ info_labels = {
 
 all_metrics = {}
 host_info = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
+all_host_info = {}
 
 def recget(d, key, default=None):
     keys = key.split(".")
@@ -140,8 +141,10 @@ def update_host_info(host):
     label_values = []
     for k, v in info_labels['host'].items():
         label_values.append(recget(hdata, v, "none"))
-    return label_values
-    host_info.labels(label_values).set(1.0)
+    old = all_host_info.pop(host)
+    host_info.remove(*old._labelvalues)
+    all_host_info[host] = host_info.labels(*label_values)
+    all_host_info[host].set(1.0)
 
 def main():
     while True:
