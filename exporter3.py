@@ -134,6 +134,7 @@ info_labels = {
 
 all_metrics = {}
 host_info = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
+proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 all_host_info = {}
 
 def recget(d, key, default=None):
@@ -209,6 +210,8 @@ def update_host_info(hdata):
 def main(xen_host, xen_user, xen_password, verify_ssl):
     start_http_server(8000)
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
+        proctime.labels(xen_host).reset()
+        proctime.labels(xen_host).inc(time.process_time())
         while True:
             xenhosts=x.xenapi.host.get_all()
             for hx in xenhosts:
