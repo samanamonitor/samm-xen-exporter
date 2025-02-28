@@ -134,11 +134,11 @@ def update_host_info(hdata):
     label_values = []
     for k, v in info_labels['host'].items():
         label_values.append(recget(hdata, v, "none"))
-    if host in all_host_info:
-        old = all_host_info.pop(host)
+    if hdata['uuid'] in all_host_info:
+        old = all_host_info.pop(hdata['uuid'])
         host_info.remove(*old._labelvalues)
-    all_host_info[host] = host_info.labels(*label_values)
-    all_host_info[host].set(1.0)
+    all_host_info[hdata['uuid']] = host_info.labels(*label_values)
+    all_host_info[hdata['uuid']].set(1.0)
 
 def main(xen_host, xen_user, xen_password, verify_ssl):
     start_http_server(8000)
