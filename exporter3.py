@@ -141,8 +141,9 @@ def main():
         xenhosts=x.xenapi.host.get_all()
         for hx in xenhosts:
             hdata = x.xenapi.host.get_record(hx)
-            labels = {}
-
+            label_values = []
+            for k, v in info_labels['host']:
+                label_values.append(recget(hdata, k, "none"))
 
             updates=x.getUpdatesRRD(hx)
             update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
