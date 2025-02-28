@@ -141,8 +141,9 @@ def update_host_info(host):
     label_values = []
     for k, v in info_labels['host'].items():
         label_values.append(recget(hdata, v, "none"))
-    old = all_host_info.pop(host)
-    host_info.remove(*old._labelvalues)
+    if host in all_host_info:
+        old = all_host_info.pop(host)
+        host_info.remove(*old._labelvalues)
     all_host_info[host] = host_info.labels(*label_values)
     all_host_info[host].set(1.0)
 
