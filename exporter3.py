@@ -138,7 +138,7 @@ def update_metrics(legends, values):
 def update_host_info(host):
     hdata = x.xenapi.host.get_record(host)
     label_values = []
-    for k, v in info_labels['host']:
+    for k, v in info_labels['host'].items():
         label_values.append(recget(hdata, k, "none"))
     host_info.labels(label_values).set(1.0)
 
