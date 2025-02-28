@@ -153,12 +153,12 @@ def main(xen_host, xen_user, xen_password, verify_ssl):
             time.sleep(60)
 
 def load_env():
+    xen_host = os.getenv("XEN_HOST", "localhost")
     xen_user = os.getenv("XEN_USER", "root")
     xen_password = os.getenv("XEN_PASSWORD", "")
-    xen_host = os.getenv("XEN_HOST", "localhost")
     xen_mode = os.getenv("XEN_MODE", "host")
     verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
-    return xen_user, xen_password, xen_host, verify_ssl
+    return xen_host, xen_user, xen_password, verify_ssl
 
 if __name__ == "__main__":
     main(*loadenv())
