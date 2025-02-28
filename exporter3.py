@@ -142,7 +142,7 @@ def update_host_info(hdata):
 
 def main(xen_host, xen_user, xen_password, verify_ssl):
     start_http_server(8000)
-    with Xen(xen_host, xen_user, xen_password, verify_ssl) as x
+    with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
         while True:
             xenhosts=x.xenapi.host.get_all()
             for hx in xenhosts:
