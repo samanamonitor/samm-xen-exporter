@@ -140,6 +140,7 @@ def update_host_info(host):
     label_values = []
     for k, v in info_labels['host'].items():
         label_values.append(recget(hdata, k, "none"))
+    return label_values
     host_info.labels(label_values).set(1.0)
 
 def main():
