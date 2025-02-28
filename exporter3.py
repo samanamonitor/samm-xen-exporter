@@ -3,12 +3,6 @@ from exporter2 import Xen
 from prometheus_client import Gauge, start_http_server
 import time
 
-xen_password = os.getenv("XEN_PASSWORD", "")
-xen_user = os.getenv("XEN_USER", "root")
-xen_host = os.getenv("XEN_HOST", "localhost")
-xen_mode = os.getenv("XEN_MODE", "host")
-verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
-
 sr_metric_names = [
     "avgqu",
     "inflight",
@@ -136,8 +130,7 @@ def update_metrics(legends, values):
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
         m.labels(*label_values).set(value)
 
-def update_host_info(host):
-    hdata = x.xenapi.host.get_record(host)
+def update_host_info(hdata):
     label_values = []
     for k, v in info_labels['host'].items():
         label_values.append(recget(hdata, v, "none"))
@@ -147,17 +140,23 @@ def update_host_info(host):
     all_host_info[host] = host_info.labels(*label_values)
     all_host_info[host].set(1.0)
 
-def main():
-    while True:
-        xenhosts=x.xenapi.host.get_all()
-        for hx in xenhosts:
-            update_host_info(hx)
-            updates=x.getUpdatesRRD(hx)
-            update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
-        time.sleep(60)
+def main(xen_host, xen_user, xen_password, verify_ssl):
+    start_http_server(8000)
+    with Xen(xen_host, xen_user, xen_password, verify_ssl) as x
+        while True:
+            xenhosts=x.xenapi.host.get_all()
+            for hx in xenhosts:
+                hdata = x.xenapi.host.get_record(hx)
+                update_host_info(hdata)
+                updates=x.getUpdatesRRD(hx)
+                update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
+            time.sleep(60)
 
-x=Xen(xen_host, xen_user, xen_password, verify_ssl)
-start_http_server(8000)
 if __name__ == "__main__":
-    main()
+    xen_password = os.getenv("XEN_PASSWORD", "")
+    xen_user = os.getenv("XEN_USER", "root")
+    xen_host = os.getenv("XEN_HOST", "localhost")
+    xen_mode = os.getenv("XEN_MODE", "host")
+    verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
+    main(xen_host, xen_user, xen_password, verify_ssl)
 
