@@ -135,16 +135,18 @@ def update_metrics(legends, values):
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
         m.labels(*label_values).set(value)
 
+def update_host_info(host):
+    hdata = x.xenapi.host.get_record(host)
+    label_values = []
+    for k, v in info_labels['host']:
+        label_values.append(recget(hdata, k, "none"))
+    host_info.labels(label_values).set(1.0)
 
 def main():
     while True:
         xenhosts=x.xenapi.host.get_all()
         for hx in xenhosts:
-            hdata = x.xenapi.host.get_record(hx)
-            label_values = []
-            for k, v in info_labels['host']:
-                label_values.append(recget(hdata, k, "none"))
-
+            update_host_info(hx)
             updates=x.getUpdatesRRD(hx)
             update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
         time.sleep(60)
