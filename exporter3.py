@@ -152,11 +152,14 @@ def main(xen_host, xen_user, xen_password, verify_ssl):
                 update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
             time.sleep(60)
 
-if __name__ == "__main__":
-    xen_password = os.getenv("XEN_PASSWORD", "")
+def load_env():
     xen_user = os.getenv("XEN_USER", "root")
+    xen_password = os.getenv("XEN_PASSWORD", "")
     xen_host = os.getenv("XEN_HOST", "localhost")
     xen_mode = os.getenv("XEN_MODE", "host")
     verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
-    main(xen_host, xen_user, xen_password, verify_ssl)
+    return xen_user, xen_password, xen_host, verify_ssl
+
+if __name__ == "__main__":
+    main(*loadenv())
 
