@@ -219,7 +219,7 @@ def update_host_metrics(legends, values):
         uuid = label_values[0]
         if collector_type == 'host':
             label_values += [ all_host_data[uuid][prop] for prop in extra_labels[collector_type] ]
-        elif collector == 'vm':
+        elif collector_type == 'vm':
             label_values += [ all_vm_data[uuid][prop] for prop in extra_labels[collector_type] ]
         m = all_metrics.get(metric_name)
         if m is None:
