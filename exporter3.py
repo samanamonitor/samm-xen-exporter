@@ -1,6 +1,7 @@
 import sys
 import os
 from prometheus_client import Counter, Gauge, start_http_server
+from prometheus_client.exposition import _SilentHandler
 import time
 import XenAPI
 import urllib.request
@@ -74,7 +75,7 @@ class Xen:
       def __exit__(self, exc_type, exc_value, traceback):
             self.xenapi.session.logout()
 
-class _SammPromHandler(prometheus_client.exposition._SilentHandler):
+class _SammPromHandler(_SilentHandler):
     def log_message(self, format, *args):
         logging.info(format, *args)
 
