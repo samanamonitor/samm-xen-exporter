@@ -214,9 +214,8 @@ def update_host_info(hdata):
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
     start_http_server(port)
+    log.info(f"Started exporter server on port {port}")
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
-        proctime.labels(xen_host).reset()
-        proctime.labels(xen_host).inc(time.process_time())
         while True:
             xenhosts=x.xenapi.host.get_all()
             for hx in xenhosts:
@@ -224,6 +223,9 @@ def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
                 update_host_info(hdata)
                 updates=x.getUpdatesRRD(hx)
                 update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
+            proctime.labels(xen_host).reset()
+            proctime.labels(xen_host).inc(time.process_time())
+            log.info(f"Finished collecting data from xenserver.")
             time.sleep(60)
 
 def load_env():
