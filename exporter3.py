@@ -5,6 +5,9 @@ import XenAPI
 import urllib.request
 import ssl
 import json
+import logging
+
+log = logging.getLogger(__name__)
 
 class Xen:
       def __init__(self, host, user, password, verify_ssl=True):
@@ -22,6 +25,7 @@ class Xen:
                   else:
                         raise
             self.session_id = self.session._session
+            log.info(f"Logged in to Xen {host} with username {user}.")
 
       @property
       def xenapi(self):
