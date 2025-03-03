@@ -231,9 +231,9 @@ def poll(x, xen_host):
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
         update_host_info(hdata)
-        start = process_time()
+        start = time.process_time()
         updates=x.getUpdatesRRD(hx)
-        proctime_rrd.labels(xen_host).set(process_time() - start)
+        proctime_rrd.labels(xen_host).set(time.process_time() - start)
         extra_values = {}
         extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
