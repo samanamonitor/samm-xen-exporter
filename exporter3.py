@@ -212,8 +212,8 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']] = host_info.labels(*label_values)
     all_host_info[hdata['uuid']].set(1.0)
 
-def main(xen_host, xen_user, xen_password, verify_ssl):
-    start_http_server(8000)
+def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
+    start_http_server(port)
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
         proctime.labels(xen_host).reset()
         proctime.labels(xen_host).inc(time.process_time())
@@ -231,10 +231,15 @@ def load_env():
     xen_user = os.getenv("XEN_USER", "root")
     xen_password = os.getenv("XEN_PASSWORD", "")
     verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
-    return xen_host, xen_user, xen_password, verify_ssl
+    log.setLevel(os.getenv("XEN_LOGLEVEL", "INFO"))
+    try:
+        port = os.getenv("XEN_COLPORT", '8000')
+    except ValueError:
+        log.warning(f"Invalid port defined in XEN_COLPORT variable. Assuming default 8000")
+        port = 8000
+    return xen_host, xen_user, xen_password, verify_ssl, port
 
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stderr)
-    log.setLevel(os.getenv("XEN_LOGLEVEL", "INFO"))
     main(*load_env())
 
