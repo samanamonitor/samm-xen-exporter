@@ -233,7 +233,7 @@ def poll(x, xen_host):
         update_host_info(hdata)
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
-        proctime_rrd.labels([hdata['uuid'], hdata['name_label']]).set(time.process_time() - start)
+        proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
         extra_values = {}
         extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
