@@ -149,6 +149,7 @@ info_labels = {
 all_metrics = {}
 host_info = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
+proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["xen_host"])
 all_host_info = {}
 
 def recget(d, key, default=None):
@@ -225,12 +226,14 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']] = host_info.labels(*label_values)
     all_host_info[hdata['uuid']].set(1.0)
 
-def poll(x):
+def poll(x, xen_host):
     xenhosts=x.xenapi.host.get_all()
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
         update_host_info(hdata)
+        start = process_time()
         updates=x.getUpdatesRRD(hx)
+        proctime_rrd.labels(xen_host).set(process_time() - start)
         extra_values = {}
         extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
@@ -242,7 +245,7 @@ def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
     log.info(f"Started exporter server on port {port}")
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
         while True:
-            poll(x)
+            poll(x, xen_host)
             pt = time.process_time()
             proctime.labels(xen_host).reset()
             proctime.labels(xen_host).inc(pt)
