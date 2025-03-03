@@ -234,7 +234,7 @@ def poll(x):
         extra_values = {}
         extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
-            extra_labels=host_extra_labels, extra_values=extra_values)
+            extra_labels=extra_labels, extra_values=extra_values)
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
     server, _ = start_http_server(port)
