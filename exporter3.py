@@ -213,10 +213,11 @@ def update_host_metrics(x, legends, values, extra_labels={}, extra_values={}):
         legend = legends[i]
         value = values[i]
         metric_name, labels, label_values, collector_type = legend_to_metric(legend)
-        if collector_type == 'vm' and uuid not in vms:
+        if collector_type == 'vm':
             uuid = label_values[labels.index('uuid')]
-            vms[uuid] = x.xenapi.VM.get_by_uuid(uuid)
-            update_vm_info(vms[uuid])
+            if uuid not in vms
+                vms[uuid] = x.xenapi.VM.get_by_uuid(uuid)
+                update_vm_info(vms[uuid])
 
         labels += extra_labels.get(collector_type, [])
         label_values += extra_values.get(collector_type, [])
