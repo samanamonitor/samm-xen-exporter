@@ -251,7 +251,7 @@ def load_env():
     return xen_host, xen_user, xen_password, verify_ssl, port
 
 if __name__ == "__main__":
-    FORMAT = '%(asctime)s %(funcName)s %(message)s'
+    FORMAT = '%(asctime)s - %(levelName)s:%(funcName)s %(message)s'
     logging.basicConfig(stream=sys.stderr, format=FORMAT)
     main(*load_env())
 
