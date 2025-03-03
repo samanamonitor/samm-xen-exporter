@@ -239,7 +239,7 @@ def poll(x, xen_host):
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
             extra_labels=extra_labels, extra_values=extra_values)
 
-def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
+def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time=60):
     server, _ = start_http_server(port)
     server.RequestHandlerClass = _SammPromHandler
     log.info(f"Started exporter server on port {port}")
@@ -250,7 +250,7 @@ def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
             proctime.labels(xen_host).reset()
             proctime.labels(xen_host).inc(pt)
             log.info(f"Finished collecting data from xenserver. ({pt})")
-            time.sleep(60)
+            time.sleep(poll_time)
 
 def load_env():
     xen_host = os.getenv("XEN_HOST", "localhost")
