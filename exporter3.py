@@ -216,7 +216,8 @@ def update_host_metrics(x, legends, values, extra_labels={}, extra_values={}):
         if collector_type == 'vm':
             uuid = label_values[labels.index('uuid')]
             if uuid not in vms:
-                vms[uuid] = x.xenapi.VM.get_by_uuid(uuid)
+                ref = x.xenapi.VM.get_by_uuid(uuid)
+                vms[uuid] = x.xenapi.VM.get_record(ref)
                 update_vm_info(vms[uuid])
 
         labels += extra_labels.get(collector_type, [])
