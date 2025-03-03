@@ -221,7 +221,6 @@ def update_host_metrics(legends, values):
             label_values += [ all_host_data[uuid][prop] for prop in extra_labels[collector_type] ]
         elif collector == 'vm':
             label_values += [ all_vm_data[uuid][prop] for prop in extra_labels[collector_type] ]
-        label_values += extra_values.get(collector_type, [])
         m = all_metrics.get(metric_name)
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
