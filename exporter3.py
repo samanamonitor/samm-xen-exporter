@@ -74,6 +74,10 @@ class Xen:
       def __exit__(self, exc_type, exc_value, traceback):
             self.xenapi.session.logout()
 
+class _SammPromHandler(prometheus_client.exposition._SilentHandler):
+    def log_message(self, format, *args):
+        logging.info(format, *args)
+
 sr_metric_names = [
     "avgqu",
     "inflight",
@@ -213,7 +217,8 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']].set(1.0)
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
-    start_http_server(port)
+    server, _ = start_http_server(port)
+    server.RequestHandlerClass = _SammPromHandler
     log.info(f"Started exporter server on port {port}")
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
         while True:
