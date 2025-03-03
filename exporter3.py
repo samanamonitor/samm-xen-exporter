@@ -233,15 +233,25 @@ def load_env():
     xen_user = os.getenv("XEN_USER", "root")
     xen_password = os.getenv("XEN_PASSWORD", "")
     verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
-    log.setLevel(os.getenv("XEN_LOGLEVEL", "INFO"))
+    loglevel = os.getenv("XEN_LOGLEVEL", "INFO")
+    port = os.getenv("XEN_COLPORT", '8000')
+
     try:
-        port = int(os.getenv("XEN_COLPORT", '8000'), 10)
+        log.setLevel(loglevel)
     except ValueError:
-        log.warning(f"Invalid port defined in XEN_COLPORT variable. Assuming default 8000")
+        log.setLevel('INFO')
+        log.warning(f"Invalid loglevel defined in XEN_LOGLEVEL={loglevel}")
+
+    try:
+        port = int(port, 10)
+    except ValueError:
+        log.warning(f"Invalid port defined in XEN_COLPORT={port} variable. Assuming default 8000")
         port = 8000
+
     return xen_host, xen_user, xen_password, verify_ssl, port
 
 if __name__ == "__main__":
-    logging.basicConfig(stream=sys.stderr)
+    FORMAT = '%(asctime)s %(funcName)s %(message)s'
+    logging.basicConfig(stream=sys.stderr, format=FORMAT)
     main(*load_env())
 
