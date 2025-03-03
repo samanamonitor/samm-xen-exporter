@@ -149,7 +149,7 @@ info_labels = {
 all_metrics = {}
 host_info = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
-proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["xen_host"])
+proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
 all_host_info = {}
 
 def recget(d, key, default=None):
@@ -233,7 +233,7 @@ def poll(x, xen_host):
         update_host_info(hdata)
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
-        proctime_rrd.labels(xen_host).set(time.process_time() - start)
+        proctime_rrd.labels([hdata['uuid'], hdata['name_label']]).set(time.process_time() - start)
         extra_values = {}
         extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
@@ -259,6 +259,7 @@ def load_env():
     verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
     loglevel = os.getenv("XEN_LOGLEVEL", "INFO")
     port = os.getenv("XEN_COLPORT", '8000')
+    poll_time = os.getenv("XEN_POLLTIME", '60')
 
     try:
         log.setLevel(loglevel)
@@ -272,7 +273,13 @@ def load_env():
         log.warning(f"Invalid port defined in XEN_COLPORT={port} variable. Assuming default 8000")
         port = 8000
 
-    return xen_host, xen_user, xen_password, verify_ssl, port
+    try:
+        poll_time = int(poll_time, 10)
+    except ValueError:
+        log.warning(f"Invalid poll time defined in XEN_POLLTIME={poll_time}. Assuming default 60")
+        poll_time = 60
+
+    return xen_host, xen_user, xen_password, verify_ssl, port, poll_time
 
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s:%(funcName)s %(message)s'
