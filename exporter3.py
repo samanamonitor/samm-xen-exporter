@@ -77,7 +77,8 @@ class Xen:
 
 class _SammPromHandler(_SilentHandler):
     def log_message(self, format, *args):
-        log.info(format, *args)
+        message = format % args
+        log.info("%s %s", self.address_string(), message)
 
 sr_metric_names = [
     "avgqu",
@@ -197,11 +198,15 @@ def legend_to_metric(legend):
     metric_name = metric_name.replace('-', '_')
     return "xen_" + collector_type + "_" + metric_name, labels, label_values
 
-def update_metrics(legends, values):
+def update_host_metrics(legends, values, extra_labels=[], extra_values=[]):
+    if len(extra_labels) != len(extra_values):
+        raise ValueError(f"Invalid extra labels. Number of extra_labels({extra_labels}) must be equal to extra_values({extra_values})")
     for i in range(len(legends)):
         legend = legends[i]
         value = values[i]
         metric_name, labels, label_values = legend_to_metric(legend)
+        labels += extra_labels
+        label_values += extra_values
         m = all_metrics.get(metric_name)
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
@@ -217,21 +222,26 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']] = host_info.labels(*label_values)
     all_host_info[hdata['uuid']].set(1.0)
 
+def poll():
+    xenhosts=x.xenapi.host.get_all()
+    for hx in xenhosts:
+        hdata = x.xenapi.host.get_record(hx)
+        update_host_info(hdata)
+        updates=x.getUpdatesRRD(hx)
+        update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
+            extra_labels=["name_label"], extra_values=[hdata['name-label']])
+
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
     server, _ = start_http_server(port)
     server.RequestHandlerClass = _SammPromHandler
     log.info(f"Started exporter server on port {port}")
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
         while True:
-            xenhosts=x.xenapi.host.get_all()
-            for hx in xenhosts:
-                hdata = x.xenapi.host.get_record(hx)
-                update_host_info(hdata)
-                updates=x.getUpdatesRRD(hx)
-                update_metrics(updates['meta']['legend'], updates['data'][0]['values'])
+            poll()
+            pt = time.process_time()
             proctime.labels(xen_host).reset()
-            proctime.labels(xen_host).inc(time.process_time())
-            log.info(f"Finished collecting data from xenserver.")
+            proctime.labels(xen_host).inc(pt)
+            log.info(f"Finished collecting data from xenserver. ({pt})")
             time.sleep(60)
 
 def load_env():
