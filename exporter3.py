@@ -91,15 +91,16 @@ sr_metric_names = [
     "write"
 ]
 extra_labels = {
-    "host": [ "name_label" ]
+    "host": [ "name_label" ],
+    "vm": [ "name_label" ]
 }
 
 info_labels = {
       "vm": {
             "uuid": "uuid",
             "name_label": "name_label",
-            "resident_on": "resident_on",
-            "power_state": "power_state"
+            "power_state": "power_state",
+            "resident_on": "resident_on"
         },
       "VM_guest_metrics": [
             "uuid",
@@ -153,7 +154,9 @@ proctime = Counter("samm_process_time", "SAMM Xen exporter process time in secon
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
 proctime_updatehostmetrics = Gauge("samm_process_time_updatehostmetrics", "SAMM process time updating metrics", ["uuid", "name_label"])
 all_host_info = {}
+all_host_data = {}
 all_vm_info = {}
+all_vm_data = {}
 
 def recget(d, key, default=None):
     keys = key.split(".")
@@ -205,22 +208,19 @@ def legend_to_metric(legend):
     metric_name = metric_name.replace('-', '_')
     return "xen_" + collector_type + "_" + metric_name, labels, label_values, collector_type
 
-def update_host_metrics(x, legends, values, extra_labels={}, extra_values={}):
+def update_host_metrics(legends, values):
 #    if len(extra_labels) != len(extra_values):
 #        raise ValueError(f"Invalid extra labels. Number of extra_labels({extra_labels}) must be equal to extra_values({extra_values})")
-    vms = {}
     for i in range(len(legends)):
         legend = legends[i]
         value = values[i]
         metric_name, labels, label_values, collector_type = legend_to_metric(legend)
-        if collector_type == 'vm':
-            uuid = label_values[labels.index('uuid')]
-            if uuid not in vms:
-                ref = x.xenapi.VM.get_by_uuid(uuid)
-                vms[uuid] = x.xenapi.VM.get_record(ref)
-                update_vm_info(vms[uuid])
-
         labels += extra_labels.get(collector_type, [])
+        uuid = label_values[0]
+        if collector_type == 'host':
+            label_values += [ all_host_data[uuid][prop] for prop in extra_labels[collector_type] ]
+        elif collector == 'vm':
+            label_values += [ all_vm_data[uuid][prop] for prop in extra_labels[collector_type] ]
         label_values += extra_values.get(collector_type, [])
         m = all_metrics.get(metric_name)
         if m is None:
@@ -237,10 +237,13 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']] = host_info.labels(*label_values)
     all_host_info[hdata['uuid']].set(1.0)
 
-def update_vm_info(vmdata):
+def update_vm_info(vmdata, host_uuid):
     label_values = []
     for k, v in info_labels['vm'].items():
-        label_values.append(recget(vmdata, v, "none"))
+        if k == "resident_on":
+            label_values.append(host_uuid)
+        else:
+            label_values.append(recget(vmdata, v, "none"))
     if vmdata['uuid'] in all_vm_info:
         old = all_vm_info.pop(vmdata['uuid'])
         vm_info.remove(*old._labelvalues)
@@ -252,14 +255,16 @@ def poll(x, xen_host):
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
         update_host_info(hdata)
+        vms = x.xenapi.host.get_resident_VMs(hx)
+        for v in vms:
+            temp = x.xenapi.VM.get_record(v)
+            all_vm_data[temp['uuid']] = temp
+            update_vm_info(temp, hdata['uuid'])
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
         proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
-        extra_values = {}
-        extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         start = time.process_time()
-        update_host_metrics(x, updates['meta']['legend'], updates['data'][0]['values'], 
-            extra_labels=extra_labels, extra_values=extra_values)
+        update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
         proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time=60):
