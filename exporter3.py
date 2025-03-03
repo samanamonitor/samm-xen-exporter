@@ -90,7 +90,9 @@ sr_metric_names = [
     "read",
     "write"
 ]
-host_extra_labels = [ "name_label" ]
+extra_labels = {
+    "host": [ "name_label" ]
+}
 
 info_labels = {
       "vm": [
@@ -197,17 +199,17 @@ def legend_to_metric(legend):
         label_values.append(state)
         metric_name = 'cpu'
     metric_name = metric_name.replace('-', '_')
-    return "xen_" + collector_type + "_" + metric_name, labels, label_values
+    return "xen_" + collector_type + "_" + metric_name, labels, label_values, collector_type
 
-def update_host_metrics(legends, values, extra_labels=[], extra_values=[]):
-    if len(extra_labels) != len(extra_values):
-        raise ValueError(f"Invalid extra labels. Number of extra_labels({extra_labels}) must be equal to extra_values({extra_values})")
+def update_host_metrics(legends, values, extra_labels={}, extra_values={}):
+#    if len(extra_labels) != len(extra_values):
+#        raise ValueError(f"Invalid extra labels. Number of extra_labels({extra_labels}) must be equal to extra_values({extra_values})")
     for i in range(len(legends)):
         legend = legends[i]
         value = values[i]
-        metric_name, labels, label_values = legend_to_metric(legend)
-        labels += extra_labels
-        label_values += extra_values
+        metric_name, labels, label_values, collector_type = legend_to_metric(legend)
+        labels += extra_labels.get(collector_type, [])
+        label_values += extra_values.get(collector_type, [])
         m = all_metrics.get(metric_name)
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
@@ -229,7 +231,8 @@ def poll(x):
         hdata = x.xenapi.host.get_record(hx)
         update_host_info(hdata)
         updates=x.getUpdatesRRD(hx)
-        extra_values = [ hdata.get(i, 'none') for i in host_extra_labels ]
+        extra_values = {}
+        extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
             extra_labels=host_extra_labels, extra_values=extra_values)
 
