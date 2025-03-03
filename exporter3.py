@@ -77,7 +77,7 @@ class Xen:
 
 class _SammPromHandler(_SilentHandler):
     def log_message(self, format, *args):
-        logging.info(format, *args)
+        log.info(format, *args)
 
 sr_metric_names = [
     "avgqu",
