@@ -222,7 +222,7 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']] = host_info.labels(*label_values)
     all_host_info[hdata['uuid']].set(1.0)
 
-def poll():
+def poll(x):
     xenhosts=x.xenapi.host.get_all()
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
@@ -237,7 +237,7 @@ def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
     log.info(f"Started exporter server on port {port}")
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
         while True:
-            poll()
+            poll(x)
             pt = time.process_time()
             proctime.labels(xen_host).reset()
             proctime.labels(xen_host).inc(pt)
