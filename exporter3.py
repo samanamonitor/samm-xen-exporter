@@ -229,7 +229,7 @@ def poll(x):
         update_host_info(hdata)
         updates=x.getUpdatesRRD(hx)
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
-            extra_labels=["name_label"], extra_values=[hdata['name-label']])
+            extra_labels=["name_label"], extra_values=[hdata['name_label']])
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000):
     server, _ = start_http_server(port)
