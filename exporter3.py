@@ -95,12 +95,12 @@ extra_labels = {
 }
 
 info_labels = {
-      "vm": [
-            "uuid",
-            "name_label",
-            "resident_on",
-            "power_state"
-      ],
+      "vm": {
+            "uuid": "uuid",
+            "name_label": "name_label",
+            "resident_on": "resident_on",
+            "power_state": "power_state"
+        },
       "VM_guest_metrics": [
             "uuid",
             "os_version.distro",
