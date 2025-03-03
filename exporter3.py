@@ -254,6 +254,7 @@ def poll(x, xen_host):
     xenhosts=x.xenapi.host.get_all()
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
+        all_host_data[hdata['uuid']] = hdata
         update_host_info(hdata)
         vms = x.xenapi.host.get_resident_VMs(hx)
         for v in vms:
