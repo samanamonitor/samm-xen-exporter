@@ -148,11 +148,12 @@ info_labels = {
 
 all_metrics = {}
 host_info = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
+vm_info = Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys()))
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
-proctime_updatehostinfo = Gauge("samm_process_time_updatehostinfo", "SAMM process time updating host hinfo", ["opaqueuuid"])
 proctime_updatehostmetrics = Gauge("samm_process_time_updatehostmetrics", "SAMM process time updating metrics", ["uuid", "name_label"])
 all_host_info = {}
+all_vm_info = {}
 
 def recget(d, key, default=None):
     keys = key.split(".")
@@ -204,13 +205,19 @@ def legend_to_metric(legend):
     metric_name = metric_name.replace('-', '_')
     return "xen_" + collector_type + "_" + metric_name, labels, label_values, collector_type
 
-def update_host_metrics(legends, values, extra_labels={}, extra_values={}):
+def update_host_metrics(x, legends, values, extra_labels={}, extra_values={}):
 #    if len(extra_labels) != len(extra_values):
 #        raise ValueError(f"Invalid extra labels. Number of extra_labels({extra_labels}) must be equal to extra_values({extra_values})")
+    vms = {}
     for i in range(len(legends)):
         legend = legends[i]
         value = values[i]
         metric_name, labels, label_values, collector_type = legend_to_metric(legend)
+        uuid = label_values[labels.index('uuid')]
+        if collector_type == 'vm' and uuid not in vms:
+            vms[uuid] = x.xenapi.VM.get_by_uuid(uuid)
+            update_vm_info(vmdata)
+
         labels += extra_labels.get(collector_type, [])
         label_values += extra_values.get(collector_type, [])
         m = all_metrics.get(metric_name)
@@ -228,20 +235,27 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']] = host_info.labels(*label_values)
     all_host_info[hdata['uuid']].set(1.0)
 
+def update_vm_info(vmdata):
+    label_values = []
+    for k, v in info_labels['vm'].items():
+        label_values.append(recget(vmdata, v, "none"))
+        old = all_vm_info.pop(vmdata['uuid'])
+        vm_info.remove(*old._labelvalues)
+    all_vm_info[vmdata['uuid']] = vm_info.labels(*label_values)
+    all_vm_info[vmdata['uuid']].set(1.0)
+
 def poll(x, xen_host):
     xenhosts=x.xenapi.host.get_all()
     for hx in xenhosts:
-        start = time.process_time()
         hdata = x.xenapi.host.get_record(hx)
         update_host_info(hdata)
-        proctime_updatehostinfo.labels(hx).set(time.process_time() - start)
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
         proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
         extra_values = {}
         extra_values['host'] = [ hdata.get(i, 'none') for i in extra_labels['host'] ]
         start = time.process_time()
-        update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'], 
+        update_host_metrics(x, updates['meta']['legend'], updates['data'][0]['values'], 
             extra_labels=extra_labels, extra_values=extra_values)
         proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
