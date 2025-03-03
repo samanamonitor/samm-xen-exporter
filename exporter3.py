@@ -233,7 +233,7 @@ def load_env():
     verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
     log.setLevel(os.getenv("XEN_LOGLEVEL", "INFO"))
     try:
-        port = os.getenv("XEN_COLPORT", '8000')
+        port = int(os.getenv("XEN_COLPORT", '8000'), 10)
     except ValueError:
         log.warning(f"Invalid port defined in XEN_COLPORT variable. Assuming default 8000")
         port = 8000
