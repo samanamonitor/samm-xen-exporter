@@ -233,5 +233,7 @@ def load_env():
     return xen_host, xen_user, xen_password, verify_ssl
 
 if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stderr)
+    log.setLevel(os.getenv("XEN_LOGLEVEL", "INFO"))
     main(*load_env())
 
