@@ -229,5 +229,5 @@ def load_env():
     return xen_host, xen_user, xen_password, verify_ssl
 
 if __name__ == "__main__":
-    main(*loadenv())
+    main(*load_env())
 
