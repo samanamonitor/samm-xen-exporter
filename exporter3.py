@@ -238,10 +238,10 @@ def update_host_info(hdata):
     all_host_info[hdata['uuid']].set(1.0)
 
 def update_vm_info(vmdata):
-    print(vmdata)
     label_values = []
     for k, v in info_labels['vm'].items():
         label_values.append(recget(vmdata, v, "none"))
+    if vmdata['uuid'] in all_vm_info:
         old = all_vm_info.pop(vmdata['uuid'])
         vm_info.remove(*old._labelvalues)
     all_vm_info[vmdata['uuid']] = vm_info.labels(*label_values)
