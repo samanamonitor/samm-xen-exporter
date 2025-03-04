@@ -180,12 +180,11 @@ static_metrics = {
     }
 }
 
-all_metrics = {}
-all_info = {
-    "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
-    "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
-    "vm_guest_metrics": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys())),
-    "sr": Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels['sr'].keys()))
+all_metrics = {
+    "xen_host_info": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
+    "xen_vm_info": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
+    "xen_vm_guest_info": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys())),
+    "xen_sr_info": Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels['sr'].keys()))    
 }
 # Will store all metrics specific to labels
 all_info_metrics = {
@@ -270,21 +269,23 @@ def update_host_metrics(legends, values):
         m.labels(*label_values).set(value)
 
 def update_info(collector_data, collector_type):
+    metric_name = "xen_" + collector_type + "_info"
     label_values = []
     for k, v in info_labels[collector_type].items():
         label_values.append(recget(collector_data, v, "none"))
     if collector_data['uuid'] in all_info_metrics:
         old_metric = all_info_metrics[collector_data['uuid']]
 
-    if collector_type not in all_info:
-        raise KeyError(f"Collector type {collector_type} not defined in all_info")
+    if metric_name not in all_metrics:
+        raise KeyError(f"Metric {metric_name} not defined in all_metrics")
+    m = all_info[metric_name]
 
     # remove old info for labels
     if collector_data['uuid'] in all_info_metrics:
         old = all_info_metrics.pop(collector_data['uuid'])
-        all_info[collector_type].remove(*old._labelvalues)
+        m.remove(*old._labelvalues)
 
-    all_info_metrics[collector_data['uuid']] = all_info[collector_type].labels(*label_values)
+    all_info_metrics[collector_data['uuid']] = m.labels(*label_values)
     all_info_metrics[collector_data['uuid']].set(1.0)
 
 def update_static_metrics(collector_data, collector_type):
