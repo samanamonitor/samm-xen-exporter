@@ -338,12 +338,6 @@ def update_objects(x, collector_type):
         update_info(data, collector_type.lower())
         update_static_metrics(data, collector_type.lower())
 
-def poll(x, xen_host):
-    update_objects(x, 'SR')
-    update_objects(x, 'VM')
-    update_objects(x, 'host')
-
-
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time=60):
     global xe
@@ -353,7 +347,9 @@ def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
         xe = x
         while True:
-            poll(x, xen_host)
+            update_objects(x, 'SR')
+            update_objects(x, 'VM')
+            update_objects(x, 'host')
             pt = time.process_time()
             proctime.labels(xen_host).reset()
             proctime.labels(xen_host).inc(pt)
