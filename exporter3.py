@@ -298,7 +298,7 @@ def update_static(ctx, collector_type):
         data = ctx.get_record(o)
         all_data[collector_type] = data
 
-        print(locals())
+        print(locals().keys())
         customize_func = locals().get("customize_" + collector_type, lambda x: None)
         customize_func(data)
         update_info(data, collector_type)
