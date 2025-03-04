@@ -292,6 +292,8 @@ def update_static_metrics(collector_data, collector_type):
 def customize_sr(srdata):
     srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
 
+
+
 def update_static(ctx, collector_type):
     for o in ctx.get_all():
         data = ctx.get_record(o)
@@ -327,16 +329,18 @@ def poll(x, xen_host):
         update_info(vmdata, 'vm')
         update_static_metrics(vmdata, 'vm')
 
-    for hx in x.xenapi.host.get_all():
-        # get data
-        hdata = x.xenapi.host.get_record(hx)
-        all_data['host'][hdata['uuid']] = hdata
+    update_static(x.xenapi.host, 'host')
 
-        # customize data
-
-        # udate metrics
-        update_info(hdata, 'host')
-        update_static_metrics(hdata, 'host')
+#    for hx in x.xenapi.host.get_all():
+#        # get data
+#        hdata = x.xenapi.host.get_record(hx)
+#        all_data['host'][hdata['uuid']] = hdata
+#
+#        # customize data
+#
+#        # udate metrics
+#        update_info(hdata, 'host')
+#        update_static_metrics(hdata, 'host')
 
     for hx in x.xenapi.host.get_all():
         # get telemetry
