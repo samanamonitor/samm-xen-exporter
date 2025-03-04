@@ -289,37 +289,62 @@ def update_info(collector_data, collector_type):
 def update_static_metrics(collector_data, collector_type):
     pass
 
+def customize_sr(srdata):
+    srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
+
+def update_static(ctx, collector_type):
+    for o in ctx.get_all():
+        data = ctx.get_record(o)
+        all_data[collector_type] = data
+
+        customize_func = locals().get("customize_" + collector_type, lambda x: None)
+        customize_func(data)
+        update_info(data, collector_type)
+        update_static_metrics(data, collector_type)
+
 def poll(x, xen_host):
 
-    srs = x.xenapi.SR.get_all()
-    for sr in srs:
-        srdata = x.xenapi.SR.get_record(sr)
-        srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
-        all_data['sr'][srdata['uuid']] = srdata
-        update_info(srdata, 'sr')
-        update_static_metrics(srdata, 'sr')
-    xenhosts=x.xenapi.host.get_all()
-    for hx in xenhosts:
+    update_static(x.xenapi.SR, 'sr')
+
+    for v in x.xenapi.VM.get_all():
+        # get data
+        vmdata = x.xenapi.VM.get_record(v)
+        all_data['vm'][vmdata['uuid']] = vmdata
+
+        # customize data
+        # TODO: generalize the function that resolves references
+        # resolve reference
+        if vmdata['resident_on'] == 'OpaqueRef:NULL':
+            vmdata['resident_on'] = ''
+        else:
+            vmdata['resident_on'] = x.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
+        if vmdata['guest_metrics'] != "OpaqueRef:NULL":
+            guest_metrics = x.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
+            all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
+            update_info(guest_metrics, 'vm_guest_metrics')
+
+        # update metrics
+        update_info(vmdata, 'vm')
+        update_static_metrics(vmdata, 'vm')
+
+    for hx in x.xenapi.host.get_all():
+        # get data
         hdata = x.xenapi.host.get_record(hx)
         all_data['host'][hdata['uuid']] = hdata
+
+        # customize data
+
+        # udate metrics
         update_info(hdata, 'host')
         update_static_metrics(hdata, 'host')
-        vms = x.xenapi.host.get_resident_VMs(hx)
-        for v in vms:
-            temp = x.xenapi.VM.get_record(v)
-            all_data['vm'][temp['uuid']] = temp
-            # TODO: generalize the function that resolves references
-            # resolve reference
-            temp['resident_on'] = x.xenapi.host.get_record(temp['resident_on']).get('uuid', 'none')
-            if temp['guest_metrics'] != "OpaqueRef:NULL":
-                guest_metrics = x.xenapi.VM_guest_metrics.get_record(temp['guest_metrics'])
-                all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
-                update_info(guest_metrics, 'vm_guest_metrics')
-            update_info(temp, 'vm')
-            update_static_metrics(temp, 'vm')
+
+    for hx in x.xenapi.host.get_all():
+        # get telemetry
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
         proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
+
+        # update metrics
         start = time.process_time()
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
         proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
