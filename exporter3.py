@@ -96,69 +96,75 @@ extra_labels = {
 }
 
 info_labels = {
-      "vm": {
-            "uuid": "uuid",
-            "name_label": "name_label",
-            "power_state": "power_state",
-            "resident_on": "resident_on"
-        },
-      "VM_guest_metrics": [
-            "uuid",
-            "os_version.distro",
-            "os_version.major",
-            "os_version.minor",
-            "os_version.build",
-            "netbios_name.host_name",
-            "PV_drivers_version.major",
-            "PV_drivers_version.minor",
-            "PV_drivers_version.micro",
-            "PV_drivers_version.build",
-      ],
-      "host": {
-            "uuid": "uuid",
-            "name_label": "name_label",
-            "API_version_major": "API_version_major",
-            "API_version_minor": "API_version_minor",
-            "API_version_vendor": "API_version_vendor",
-            "product_version": "software_version.product_version",
-            "platform_name": "software_version.platform_name",
-            "platform_version": "software_version.platform_version",
-            "xapi_version": "software_version.xapi",
-            "xapi_build": "software_version.xapi_build",
-            "xen_version": "software_version.xen",
-            "linux_version": "software_version.linux",
-            "network_backend": "software_version.network_backend",
-            "db_schema": "software_version.db_schema",
-            "cpu_count": "cpu_info.cpu_count",
-            "socket_count": "cpu_info.socket_count",
-            "threads_per_core": "cpu_info.threads_per_core",
-            "cpu_vendor": "cpu_info.vendor",
-            "cpu_speed": "cpu_info.speed",
-            "cpu_modelname": "cpu_info.modelname",
-            "multipathing": "other_config.multipathing",
-            "mpath_boot": "other_config.mpath_boot",
-            "hostname": "hostname",
-            "address": "address",
-            "bios_vendor": "bios_strings.bios-vendor",
-            "bios_version": "bios_strings.bios-version",
-            "system_manufacturer": "bios_strings.system-manufacturer",
-            "system_product_name": "bios_strings.system-product-name",
-            "system_serial_number": "bios_strings.system-serial-number"
-      }
+    "vm": {
+        "uuid": "uuid",
+        "name_label": "name_label",
+        "power_state": "power_state",
+        "resident_on": "resident_on"
+    },
+    "vm_guest_metrics": {
+        "uuid": "uuid",
+        "os_version_distro": "os_version.distro",
+        "os_version_major": "os_version.major",
+        "os_version_minor": "os_version.minor",
+        "os_version_build": "os_version.build",
+        "netbios_name": "netbios_name.host_name",
+        "PV_drivers_version_major": "PV_drivers_version.major",
+        "PV_drivers_version_minor": "PV_drivers_version.minor",
+        "PV_drivers_version_micro": "PV_drivers_version.micro",
+        "PV_drivers_version_build": "PV_drivers_version.build"
+    },
+    "host": {
+        "uuid": "uuid",
+        "name_label": "name_label",
+        "API_version_major": "API_version_major",
+        "API_version_minor": "API_version_minor",
+        "API_version_vendor": "API_version_vendor",
+        "product_version": "software_version.product_version",
+        "platform_name": "software_version.platform_name",
+        "platform_version": "software_version.platform_version",
+        "xapi_version": "software_version.xapi",
+        "xapi_build": "software_version.xapi_build",
+        "xen_version": "software_version.xen",
+        "linux_version": "software_version.linux",
+        "network_backend": "software_version.network_backend",
+        "db_schema": "software_version.db_schema",
+        "cpu_count": "cpu_info.cpu_count",
+        "socket_count": "cpu_info.socket_count",
+        "threads_per_core": "cpu_info.threads_per_core",
+        "cpu_vendor": "cpu_info.vendor",
+        "cpu_speed": "cpu_info.speed",
+        "cpu_modelname": "cpu_info.modelname",
+        "multipathing": "other_config.multipathing",
+        "mpath_boot": "other_config.mpath_boot",
+        "hostname": "hostname",
+        "address": "address",
+        "bios_vendor": "bios_strings.bios-vendor",
+        "bios_version": "bios_strings.bios-version",
+        "system_manufacturer": "bios_strings.system-manufacturer",
+        "system_product_name": "bios_strings.system-product-name",
+        "system_serial_number": "bios_strings.system-serial-number"
+    }
 }
 
 all_metrics = {}
-host_info = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
-vm_info = Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys()))
+info_metrics = {
+    "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
+    "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys()))    
+}
+vm_metrics_info = Gauge("xen_vm_metrics_info", "Information about guest metrics", info_labels['vm_metrics_info'])
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
 proctime_updatehostmetrics = Gauge("samm_process_time_updatehostmetrics", "SAMM process time updating metrics", ["uuid", "name_label"])
 all_host_info = {}
 all_host_data = {}
+all_info = {}
 all_vm_info = {}
 all_vm_data = {}
 
 def recget(d, key, default=None):
+    if not isinstance(d, dict):
+        return default
     keys = key.split(".")
     v = d
     for k in keys:
@@ -226,40 +232,31 @@ def update_host_metrics(legends, values):
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
         m.labels(*label_values).set(value)
 
-def update_host_info(hdata):
+def update_info(collector_data, collector_type):
     label_values = []
-    for k, v in info_labels['host'].items():
-        label_values.append(recget(hdata, v, "none"))
-    if hdata['uuid'] in all_host_info:
-        old = all_host_info.pop(hdata['uuid'])
-        host_info.remove(*old._labelvalues)
-    all_host_info[hdata['uuid']] = host_info.labels(*label_values)
-    all_host_info[hdata['uuid']].set(1.0)
-
-def update_vm_info(vmdata, host_uuid):
-    label_values = []
-    for k, v in info_labels['vm'].items():
-        if k == "resident_on":
-            label_values.append(host_uuid)
-        else:
-            label_values.append(recget(vmdata, v, "none"))
-    if vmdata['uuid'] in all_vm_info:
-        old = all_vm_info.pop(vmdata['uuid'])
-        vm_info.remove(*old._labelvalues)
-    all_vm_info[vmdata['uuid']] = vm_info.labels(*label_values)
-    all_vm_info[vmdata['uuid']].set(1.0)
+    for k, v in info_labels[collector_type].items():
+        label_values.append(recget(collector_data, v, "none"))
+    all_collector_info = all_info.get(collector_type)
+    if all_collector_info is None:
+        # TODO: Maybe cause an exception?
+        return 
+    if collector_data['uuid'] in all_collector_info:
+        old = all_collector_info.pop(collector_data['uuid'])
+        info_metrics[collector_type].remove(*old._labelvalues)
+    all_collector_info[collector_data['uuid']] = info_metrics[collector_type].labels(*label_values)
+    all_collector_info[collector_data['uuid']].set(1.0)
 
 def poll(x, xen_host):
     xenhosts=x.xenapi.host.get_all()
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
         all_host_data[hdata['uuid']] = hdata
-        update_host_info(hdata)
+        update_info(hdata, 'host')
         vms = x.xenapi.host.get_resident_VMs(hx)
         for v in vms:
             temp = x.xenapi.VM.get_record(v)
             all_vm_data[temp['uuid']] = temp
-            update_vm_info(temp, hdata['uuid'])
+            update_info(temp, 'vm')
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
         proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
