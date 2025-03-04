@@ -262,6 +262,8 @@ def poll(x, xen_host):
         for v in vms:
             temp = x.xenapi.VM.get_record(v)
             all_vm_data[temp['uuid']] = temp
+            # resolve reference
+            temp['resident_on'] = x.xenapi.host.get_record(temp['resident_on']).get('uuid', 'none')
             update_info(temp, 'vm')
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
