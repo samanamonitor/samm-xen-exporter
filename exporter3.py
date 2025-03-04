@@ -161,21 +161,21 @@ static_metrics = {
         "memory_static_min": "memory_static_min",
         "VCPUs_at_startup": "VCPUs_at_startup"
     },
-    "host": [
+    "host": {
         "agent_start_time": "other_config.agent_start_time",
         "boot_time": "other_config.boot_time",
         "last_software_update": "last_software_update"
-    ],
-    "host_metrics": [
+    },
+    "host_metrics": {
         "memory_total": "memory_total",
         "memory_free": "memory_free",
         "last_updated": "last_updated"
-    ],
-    "sr": [
+    },
+    "sr": {
         "physical_size": "physical_size",
         "physical_utilization": "physical_utilization",
         "virtual_allocation": "virtual_allocation"
-    ]
+    }
 }
 
 all_metrics = {}
