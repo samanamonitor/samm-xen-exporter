@@ -148,7 +148,8 @@ info_labels = {
     },
     "sr": {
         "uuid": "uuid",
-        "name_label": "name_label"
+        "name_label": "name_label",
+        "short_uuid": "short_uuid"
     }
 }
 static_metrics = {
