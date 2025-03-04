@@ -157,7 +157,6 @@ info_labels = {
 static_metrics = {
     "vm": {
         "memory_overhead": "memory_overhead",
-        "memory_target": "memory_target",
         "memory_static_max": "memory_static_max",
         "memory_dybamic_max": "memory_dybamic_max",
         "memory_dynamic_min": "memory_dynamic_min",
