@@ -151,7 +151,12 @@ all_metrics = {}
 all_info = {
     "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
     "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
-    "vm_guest": Gauge("xen_vm_guest_info", "Information about guest metrics", info_labels['vm_guest_metrics'])
+    "vm_guest": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys()))
+}
+# Will store all metrics specific to labels
+all_info_metrics = {
+    "host": {},
+    "vm": {}
 }
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
@@ -233,15 +238,19 @@ def update_info(collector_data, collector_type):
     label_values = []
     for k, v in info_labels[collector_type].items():
         label_values.append(recget(collector_data, v, "none"))
-    all_collector_info = all_info.get(collector_type)
-    if all_collector_info is None:
-        # TODO: Maybe cause an exception?
-        return 
-    if collector_data['uuid'] in all_collector_info:
-        old = all_collector_info.pop(collector_data['uuid'])
-        all_collector_info.remove(*old._labelvalues)
-    all_collector_info[collector_data['uuid']] = all_collector_info.labels(*label_values)
-    all_collector_info[collector_data['uuid']].set(1.0)
+    if collector_data['uuid'] in all_info_metrics:
+        old_metric = all_info_metrics[collector_data['uuid']]
+
+    if collector_type not in all_info:
+        raise KeyError(f"Collector type {collector_type} not defined in all_info")
+
+    # remove old info for labels
+    if collector_data['uuid'] in all_info_metrics:
+        old = all_info_metrics.pop(collector_data['uuid'])
+        all_info[collector_type].remove(*old._labelvalues)
+
+    all_info_metrics[collector_data['uuid']] = all_info[collector_type].labels(*label_values)
+    all_info_metrics[collector_data['uuid']].set(1.0)
 
 def poll(x, xen_host):
     xenhosts=x.xenapi.host.get_all()
