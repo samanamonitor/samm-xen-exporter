@@ -344,14 +344,14 @@ def poll(x, xen_host):
 
     for hx in x.xenapi.host.get_all():
         # get telemetry
-        start = time.process_time()
+        #start = time.process_time()
         updates=x.getUpdatesRRD(hx)
-        proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
+        #proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
         # update metrics
-        start = time.process_time()
+        #start = time.process_time()
         update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
-        proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
+        #proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time=60):
     server, _ = start_http_server(port)
