@@ -183,7 +183,7 @@ static_metrics = {
 all_metrics = {
     "xen_host_info": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
     "xen_vm_info": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
-    "xen_vm_guest_info": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys())),
+    "xen_vm_guest_metrics_info": Gauge("xen_vm_guest_metrics_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys())),
     "xen_sr_info": Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels['sr'].keys()))    
 }
 # Will store all metrics specific to labels
