@@ -290,7 +290,6 @@ def update_static_metrics(collector_data, collector_type):
     pass
 
 def customize_sr(srdata):
-    print("customize_sr")
     srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
 
 def update_static(ctx, collector_type):
