@@ -148,19 +148,16 @@ info_labels = {
 }
 
 all_metrics = {}
-info_metrics = {
+all_info = {
     "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
-    "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys()))    
+    "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
+    "vm_guest": Gauge("xen_vm_guest_info", "Information about guest metrics", info_labels['vm_guest_metrics'])
 }
-vm_metrics_info = Gauge("xen_vm_metrics_info", "Information about guest metrics", info_labels['vm_guest_metrics'])
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
 proctime_updatehostmetrics = Gauge("samm_process_time_updatehostmetrics", "SAMM process time updating metrics", ["uuid", "name_label"])
-all_host_info = {}
-all_host_data = {}
-all_info = {}
-all_vm_info = {}
 all_vm_data = {}
+all_host_data = {}
 
 def recget(d, key, default=None):
     if not isinstance(d, dict):
@@ -242,8 +239,8 @@ def update_info(collector_data, collector_type):
         return 
     if collector_data['uuid'] in all_collector_info:
         old = all_collector_info.pop(collector_data['uuid'])
-        info_metrics[collector_type].remove(*old._labelvalues)
-    all_collector_info[collector_data['uuid']] = info_metrics[collector_type].labels(*label_values)
+        all_collector_info.remove(*old._labelvalues)
+    all_collector_info[collector_data['uuid']] = all_collector_info.labels(*label_values)
     all_collector_info[collector_data['uuid']].set(1.0)
 
 def poll(x, xen_host):
