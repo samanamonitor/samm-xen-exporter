@@ -60,22 +60,23 @@ class Xen:
             res=urllib.request.urlopen(f"https://{host_ip}/vm_rrd?session_id={self.session_id}&uuid={vmuuid}&json=true", **kwargs)
             return json.load(res)
 
-      def getUpdatesRRD(self, host, cf='AVERAGE'):
-            kwargs = {}
-            if not self._verify_ssl:
-                  kwargs['context'] = ssl._create_unverified_context()
-            host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
-            if host_ip is None:
-                  raise ValueError(f"Unable to get IP for host '{host}'")
-            start = int(time.time()) - 10
-            res=urllib.request.urlopen(f"https://{host_ip}/rrd_updates?session_id={self.session_id}&json=true&start={start}&cf={cf}&host=true", **kwargs)
-            return json.load(res)
+    def getUpdatesRRD(self, hdata, cf='AVERAGE'):
+        host = x.xenapi.host.get_by_uuid(hdata['uuid'])
+        kwargs = {}
+        if not self._verify_ssl:
+            kwargs['context'] = ssl._create_unverified_context()
+        host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
+        if host_ip is None:
+            raise ValueError(f"Unable to get IP for host '{host}'")
+        start = int(time.time()) - 10
+        res=urllib.request.urlopen(f"https://{host_ip}/rrd_updates?session_id={self.session_id}&json=true&start={start}&cf={cf}&host=true", **kwargs)
+        return json.load(res)
 
-      def __enter__(self):
-            return self
+    def __enter__(self):
+        return self
 
-      def __exit__(self, exc_type, exc_value, traceback):
-            self.xenapi.session.logout()
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.xenapi.session.logout()
 
 class _SammPromHandler(_SilentHandler):
     def log_message(self, format, *args):
@@ -319,7 +320,7 @@ def customize_vm(x, vmdata):
 
 def customize_host(x, hdata):
     start = time.process_time()
-    updates=x.getUpdatesRRD(hx)
+    updates=x.getUpdatesRRD(hdata)
     proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
     # update metrics
