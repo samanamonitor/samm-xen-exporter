@@ -189,12 +189,14 @@ all_info = {
 all_info_metrics = {
     "host": {},
     "vm": {},
-    "vm_guest_metrics": {}
+    "vm_guest_metrics": {},
+    "sr": {}
 }
 all_data = {
     "host": {},
     "vm": {},
-    "vm_guest_metrics": {}
+    "vm_guest_metrics": {},
+    "sr": {}
 }
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
