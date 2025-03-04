@@ -298,7 +298,8 @@ def update_static(ctx, collector_type):
         data = ctx.get_record(o)
         all_data[collector_type] = data
 
-        customize_func = locals().get("customize_" + collector_type, lambda x: print(collector_type))
+        print(locals())
+        customize_func = locals().get("customize_" + collector_type, lambda x: None)
         customize_func(data)
         update_info(data, collector_type)
         update_static_metrics(data, collector_type)
