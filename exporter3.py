@@ -267,7 +267,6 @@ def update_host_metrics(legends, values):
         m = all_metrics.get(metric_name)
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
-        print(metric_name, labels, label_values)
         m.labels(*label_values).set(value)
 
 def update_info(collector_data, collector_type):
