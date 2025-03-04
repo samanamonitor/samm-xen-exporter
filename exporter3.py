@@ -301,50 +301,49 @@ def update_static_metrics(collector_data, collector_type):
         m.labels(collector_data['uuid']).set(data)
 
 
-def customize_sr(srdata):
+def customize_sr(x, srdata):
     srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
 
-def customize_vm(vmdata):
+def customize_vm(x, vmdata):
     # TODO: generalize the function that resolves references
     # resolve reference
     if vmdata['resident_on'] == 'OpaqueRef:NULL':
         vmdata['resident_on'] = ''
     else:
-        vmdata['resident_on'] = xe.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
+        vmdata['resident_on'] = x.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
 
     if vmdata['guest_metrics'] != "OpaqueRef:NULL":
-        guest_metrics = xe.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
+        guest_metrics = x.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
         all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
         update_info(guest_metrics, 'vm_guest_metrics')
 
-def update_static(ctx, collector_type):
+def customize_host(x, hdata):
+    start = time.process_time()
+    updates=x.getUpdatesRRD(hx)
+    proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
+
+    # update metrics
+    start = time.process_time()
+    update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
+    proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
+
+def update_objects(x, collector_type):
+    ctx = getattr(x.xenapi, collector_type)
     for o in ctx.get_all():
         data = ctx.get_record(o)
-        all_data[collector_type][data['uuid']] = data
+        all_data[collector_type.lower()][data['uuid']] = data
 
-        customize_func = globals().get("customize_" + collector_type, lambda x: None)
-        customize_func(data)
-        update_info(data, collector_type)
-        update_static_metrics(data, collector_type)
+        customize_func = globals().get("customize_" + collector_type.lower(), lambda x, y: None)
+        customize_func(x, data)
+        update_info(data, collector_type.lower())
+        update_static_metrics(data, collector_type.lower())
 
 def poll(x, xen_host):
+    update_objects(x, 'SR')
+    update_objects(x, 'VM')
+    update_objects(x, 'host')
 
-    update_static(x.xenapi.SR, 'sr')
-    update_static(x.xenapi.VM, 'vm')
-    update_static(x.xenapi.host, 'host')
 
-
-    for hx in x.xenapi.host.get_all():
-        hdata = x.xenapi.host.get_record(hx)
-        # get telemetry
-        start = time.process_time()
-        updates=x.getUpdatesRRD(hx)
-        proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
-
-        # update metrics
-        start = time.process_time()
-        update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
-        proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time=60):
     global xe
