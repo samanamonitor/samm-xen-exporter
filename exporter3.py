@@ -149,7 +149,7 @@ info_labels = {
 
 all_metrics = {}
 info_metrics = {
-    "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys()))
+    "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
     "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys()))    
 }
 vm_metrics_info = Gauge("xen_vm_metrics_info", "Information about guest metrics", info_labels['vm_metrics_info'])
