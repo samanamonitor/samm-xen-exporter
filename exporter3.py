@@ -11,6 +11,8 @@ import logging
 
 log = logging.getLogger(__name__)
 
+xe = None
+
 class Xen:
       def __init__(self, host, user, password, verify_ssl=True):
             self._verify_ssl = verify_ssl
@@ -298,9 +300,9 @@ def customize_vm(vmdata):
     if vmdata['resident_on'] == 'OpaqueRef:NULL':
         vmdata['resident_on'] = ''
     else:
-        vmdata['resident_on'] = x.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
+        vmdata['resident_on'] = xe.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
     if vmdata['guest_metrics'] != "OpaqueRef:NULL":
-        guest_metrics = x.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
+        guest_metrics = xe.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
         all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
         update_info(guest_metrics, 'vm_guest_metrics')
 
@@ -334,10 +336,12 @@ def poll(x, xen_host):
         proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
 def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time=60):
+    global xe
     server, _ = start_http_server(port)
     server.RequestHandlerClass = _SammPromHandler
     log.info(f"Started exporter server on port {port}")
     with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
+        xe = x
         while True:
             poll(x, xen_host)
             pt = time.process_time()
