@@ -145,14 +145,45 @@ info_labels = {
         "system_manufacturer": "bios_strings.system-manufacturer",
         "system_product_name": "bios_strings.system-product-name",
         "system_serial_number": "bios_strings.system-serial-number"
+    },
+    "sr": {
+        "uuid": "uuid",
+        "name_label": "name_label"
     }
+}
+static_metrics = {
+    "vm": {
+        "memory_overhead": "memory_overhead",
+        "memory_target": "memory_target",
+        "memory_static_max": "memory_static_max",
+        "memory_dybamic_max": "memory_dybamic_max",
+        "memory_dynamic_min": "memory_dynamic_min",
+        "memory_static_min": "memory_static_min",
+        "VCPUs_at_startup": "VCPUs_at_startup"
+    },
+    "host": [
+        "agent_start_time": "other_config.agent_start_time",
+        "boot_time": "other_config.boot_time",
+        "last_software_update": "last_software_update"
+    ],
+    "host_metrics": [
+        "memory_total": "memory_total",
+        "memory_free": "memory_free",
+        "last_updated": "last_updated"
+    ],
+    "sr": [
+        "physical_size": "physical_size",
+        "physical_utilization": "physical_utilization",
+        "virtual_allocation": "virtual_allocation"
+    ]
 }
 
 all_metrics = {}
 all_info = {
     "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
     "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
-    "vm_guest_metrics": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys()))
+    "vm_guest_metrics": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys())),
+    "sr": Gauge("xen_sr_info", "Information about Storage Repositories")
 }
 # Will store all metrics specific to labels
 all_info_metrics = {
@@ -252,12 +283,23 @@ def update_info(collector_data, collector_type):
     all_info_metrics[collector_data['uuid']] = all_info[collector_type].labels(*label_values)
     all_info_metrics[collector_data['uuid']].set(1.0)
 
+def update_static_metrics(collector_data, collector_type):
+    pass
+
 def poll(x, xen_host):
+
+    srs = x.xenapi.SR.get_all()
+    for sr in srs:
+        srdata = x.xenapi.SR.get_record(sr)
+        all_data['sr'][srdata['uuid']] = srdata
+        update_info(srdata, 'sr')
+        update_static_metrics(srdata, 'sr')
     xenhosts=x.xenapi.host.get_all()
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
         all_data['host'][hdata['uuid']] = hdata
         update_info(hdata, 'host')
+        update_static_metrics(hdata, 'host')
         vms = x.xenapi.host.get_resident_VMs(hx)
         for v in vms:
             temp = x.xenapi.VM.get_record(v)
@@ -270,6 +312,7 @@ def poll(x, xen_host):
                 all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
                 update_info(guest_metrics, 'vm_guest_metrics')
             update_info(temp, 'vm')
+            update_static_metrics(temp, 'vm')
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
         proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
