@@ -298,7 +298,7 @@ def customize_sr(srdata):
 def update_static(ctx, collector_type):
     for o in ctx.get_all():
         data = ctx.get_record(o)
-        all_data[collector_type] = data
+        all_data[collector_type][data['uuid']] = data
 
         customize_func = globals().get("customize_" + collector_type, lambda x: None)
         customize_func(data)
