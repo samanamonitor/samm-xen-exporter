@@ -262,7 +262,7 @@ def update_host_metrics(legends, values):
         metric_name, labels, label_values, collector_type = legend_to_metric(legend)
         labels += extra_labels.get(collector_type, [])
         uuid = label_values[0]
-        print(collector_type, uuid, prop)
+        print(collector_type, uuid)
         label_values += [ all_data[collector_type][uuid][prop] for prop in extra_labels[collector_type] ]
         m = all_metrics.get(metric_name)
         if m is None:
