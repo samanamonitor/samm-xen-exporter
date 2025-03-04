@@ -149,7 +149,7 @@ info_labels = {
     "sr": {
         "uuid": "uuid",
         "name_label": "name_label",
-        "short_uuid": "short_uuid"
+        "sr_uuid": "sr_uuid"
     }
 }
 static_metrics = {
@@ -294,7 +294,7 @@ def poll(x, xen_host):
     srs = x.xenapi.SR.get_all()
     for sr in srs:
         srdata = x.xenapi.SR.get_record(sr)
-        srdata['short_uuid'] = srdata['uuid'].split('-')[0]
+        srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
         all_data['sr'][srdata['uuid']] = srdata
         update_info(srdata, 'sr')
         update_static_metrics(srdata, 'sr')
