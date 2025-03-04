@@ -92,7 +92,8 @@ sr_metric_names = [
 ]
 extra_labels = {
     "host": [ "name_label" ],
-    "vm": [ "name_label" ]
+    "vm": [ "name_label" ],
+    "vm_guest_metrics": []
 }
 
 info_labels = {
@@ -151,18 +152,22 @@ all_metrics = {}
 all_info = {
     "host": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
     "vm": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
-    "vm_guest": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys()))
+    "vm_guest_metrics": Gauge("xen_vm_guest_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys()))
 }
 # Will store all metrics specific to labels
 all_info_metrics = {
     "host": {},
-    "vm": {}
+    "vm": {},
+    "vm_guest_metrics": {}
+}
+all_data = {
+    "host": {},
+    "vm": {},
+    "vm_guest_metrics": {}
 }
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
 proctime_updatehostmetrics = Gauge("samm_process_time_updatehostmetrics", "SAMM process time updating metrics", ["uuid", "name_label"])
-all_vm_data = {}
-all_host_data = {}
 
 def recget(d, key, default=None):
     if not isinstance(d, dict):
@@ -217,18 +222,13 @@ def legend_to_metric(legend):
     return "xen_" + collector_type + "_" + metric_name, labels, label_values, collector_type
 
 def update_host_metrics(legends, values):
-#    if len(extra_labels) != len(extra_values):
-#        raise ValueError(f"Invalid extra labels. Number of extra_labels({extra_labels}) must be equal to extra_values({extra_values})")
     for i in range(len(legends)):
         legend = legends[i]
         value = values[i]
         metric_name, labels, label_values, collector_type = legend_to_metric(legend)
         labels += extra_labels.get(collector_type, [])
         uuid = label_values[0]
-        if collector_type == 'host':
-            label_values += [ all_host_data[uuid][prop] for prop in extra_labels[collector_type] ]
-        elif collector_type == 'vm':
-            label_values += [ all_vm_data[uuid][prop] for prop in extra_labels[collector_type] ]
+        label_values += [ all_data[collector_type][uuid][prop] for prop in extra_labels[collector_type] ]
         m = all_metrics.get(metric_name)
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
@@ -256,14 +256,18 @@ def poll(x, xen_host):
     xenhosts=x.xenapi.host.get_all()
     for hx in xenhosts:
         hdata = x.xenapi.host.get_record(hx)
-        all_host_data[hdata['uuid']] = hdata
+        all_data['host'][hdata['uuid']] = hdata
         update_info(hdata, 'host')
         vms = x.xenapi.host.get_resident_VMs(hx)
         for v in vms:
             temp = x.xenapi.VM.get_record(v)
-            all_vm_data[temp['uuid']] = temp
+            all_data['vm'][temp['uuid']] = temp
+            # TODO: generalize the function that resolves references
             # resolve reference
             temp['resident_on'] = x.xenapi.host.get_record(temp['resident_on']).get('uuid', 'none')
+            guest_metrics = x.xenapi.VM_guest_metrics.get_record(temp['guest_metrics'])
+            all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
+            update_info(guest_metrics, 'vm_guest_metrics')
             update_info(temp, 'vm')
         start = time.process_time()
         updates=x.getUpdatesRRD(hx)
