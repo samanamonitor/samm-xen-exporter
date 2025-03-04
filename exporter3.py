@@ -161,7 +161,7 @@ static_metrics = {
         "memory_dybamic_max": "memory_dybamic_max",
         "memory_dynamic_min": "memory_dynamic_min",
         "memory_static_min": "memory_static_min",
-        "VCPUs_at_startup": "VCPUs_at_startup"
+        "vcpus_at_startup": "VCPUs_at_startup"
     },
     "host": {
         "agent_start_time": "other_config.agent_start_time",
@@ -175,7 +175,7 @@ static_metrics = {
     },
     "sr": {
         "physical_size": "physical_size",
-        "physical_utilization": "physical_utilization",
+        "physical_utilisation": "physical_utilisation",
         "virtual_allocation": "virtual_allocation"
     }
 }
