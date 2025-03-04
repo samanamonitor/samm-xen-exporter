@@ -14,51 +14,51 @@ log = logging.getLogger(__name__)
 xe = None
 
 class Xen:
-      def __init__(self, host, user, password, verify_ssl=True):
-            self._verify_ssl = verify_ssl
-            self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not verify_ssl)
-            try:
-                  self.session.xenapi.login_with_password(user, password)
-            except XenAPI.XenAPI.Failure as e:
-                  d = eval(str(e))
-                  if len(d) == 2:
-                        if d[0] == 'HOST_IS_SLAVE':
-                              print(f"WARNING: This host is slave. Connecting to '{d[1]}'")
-                              self.session = XenAPI.Session(f"https://{d[1]}", ignore_ssl=not verify_ssl)
-                              self.session.xenapi.login_with_password(user, password)
-                  else:
-                        raise
-            self.session_id = self.session._session
-            log.info(f"Logged in to Xen {host} with username {user}.")
+    def __init__(self, host, user, password, verify_ssl=True):
+        self._verify_ssl = verify_ssl
+        self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not verify_ssl)
+        try:
+            self.session.xenapi.login_with_password(user, password)
+        except XenAPI.XenAPI.Failure as e:
+            d = eval(str(e))
+            if len(d) == 2:
+                if d[0] == 'HOST_IS_SLAVE':
+                    print(f"WARNING: This host is slave. Connecting to '{d[1]}'")
+                    self.session = XenAPI.Session(f"https://{d[1]}", ignore_ssl=not verify_ssl)
+                    self.session.xenapi.login_with_password(user, password)
+            else:
+                raise
+        self.session_id = self.session._session
+        log.info(f"Logged in to Xen {host} with username {user}.")
 
-      @property
-      def xenapi(self):
-            return self.session.xenapi
+    @property
+    def xenapi(self):
+        return self.session.xenapi
 
-      def getHostRRD(self, host):
-            # get full RRD
-            kwargs = {}
-            if not self._verify_ssl:
-                  kwargs['context'] = ssl._create_unverified_context()
-            host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
-            if host_ip is None:
-                  raise ValueError(f"Unable to get IP for host '{host}'")
-            res=urllib.request.urlopen(f"https://{host_ip}/host_rrd?session_id={self.session_id}&json=true", **kwargs)
-            return json.load(res)
+    def getHostRRD(self, host):
+        # get full RRD
+        kwargs = {}
+        if not self._verify_ssl:
+              kwargs['context'] = ssl._create_unverified_context()
+        host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
+        if host_ip is None:
+              raise ValueError(f"Unable to get IP for host '{host}'")
+        res=urllib.request.urlopen(f"https://{host_ip}/host_rrd?session_id={self.session_id}&json=true", **kwargs)
+        return json.load(res)
 
-      def getVmRRD(self, host, vm):
-            #xen.xenapi.host.get_resident_VMs(xen.xenapi.host.get_all()[0])[0])['uuid']
-            kwargs = {}
-            if not self._verify_ssl:
-                  kwargs['context'] = ssl._create_unverified_context()
-            vmuuid=self.xenapi.VM.get_record(vm).get('uuid')
-            if vmuuid is None:
-                  raise ValueError(f"VM '{vm}' could not be found")
-            host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
-            if host_ip is None:
-                  raise ValueError(f"Unable to get IP for host '{host}'")
-            res=urllib.request.urlopen(f"https://{host_ip}/vm_rrd?session_id={self.session_id}&uuid={vmuuid}&json=true", **kwargs)
-            return json.load(res)
+    def getVmRRD(self, host, vm):
+        #xen.xenapi.host.get_resident_VMs(xen.xenapi.host.get_all()[0])[0])['uuid']
+        kwargs = {}
+        if not self._verify_ssl:
+            kwargs['context'] = ssl._create_unverified_context()
+        vmuuid=self.xenapi.VM.get_record(vm).get('uuid')
+        if vmuuid is None:
+            raise ValueError(f"VM '{vm}' could not be found")
+        host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
+        if host_ip is None:
+            raise ValueError(f"Unable to get IP for host '{host}'")
+        res=urllib.request.urlopen(f"https://{host_ip}/vm_rrd?session_id={self.session_id}&uuid={vmuuid}&json=true", **kwargs)
+        return json.load(res)
 
     def getUpdatesRRD(self, hdata, cf='AVERAGE'):
         host = x.xenapi.host.get_by_uuid(hdata['uuid'])
