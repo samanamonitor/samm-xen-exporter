@@ -278,7 +278,7 @@ def update_info(collector_data, collector_type):
 
     if metric_name not in all_metrics:
         raise KeyError(f"Metric {metric_name} not defined in all_metrics")
-    m = all_info[metric_name]
+    m = all_metrics[metric_name]
 
     # remove old info for labels
     if collector_data['uuid'] in all_info_metrics:
