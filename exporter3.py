@@ -265,6 +265,7 @@ def poll(x, xen_host):
             # TODO: generalize the function that resolves references
             # resolve reference
             temp['resident_on'] = x.xenapi.host.get_record(temp['resident_on']).get('uuid', 'none')
+            print(temp['guest_metrics'])
             guest_metrics = x.xenapi.VM_guest_metrics.get_record(temp['guest_metrics'])
             all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
             update_info(guest_metrics, 'vm_guest_metrics')
