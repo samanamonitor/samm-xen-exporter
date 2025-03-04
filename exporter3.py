@@ -289,7 +289,17 @@ def update_info(collector_data, collector_type):
     all_info_metrics[collector_data['uuid']].set(1.0)
 
 def update_static_metrics(collector_data, collector_type):
-    pass
+    for name, k in static_metrics[collector_type]:
+        metric_name = "xen_" + collector_type + "_" + name
+        m = all_metrics.get(metric_name)
+        if m is None:
+            m = all_metrics[metric_name] = Gauge(metric_name, metric_name, [ 'uuid' ])
+        try:
+            data = float(recget(collector_data, k, -1))
+        except Exception:
+            data = float(-1)
+        m.labels(collector_data['uuid']).set(data)
+
 
 def customize_sr(srdata):
     srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
@@ -301,6 +311,7 @@ def customize_vm(vmdata):
         vmdata['resident_on'] = ''
     else:
         vmdata['resident_on'] = xe.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
+
     if vmdata['guest_metrics'] != "OpaqueRef:NULL":
         guest_metrics = xe.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
         all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
