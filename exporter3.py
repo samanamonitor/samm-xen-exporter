@@ -61,7 +61,7 @@ class Xen:
         return json.load(res)
 
     def getUpdatesRRD(self, hdata, cf='AVERAGE'):
-        host = x.xenapi.host.get_by_uuid(hdata['uuid'])
+        host = self.xenapi.host.get_by_uuid(hdata['uuid'])
         kwargs = {}
         if not self._verify_ssl:
             kwargs['context'] = ssl._create_unverified_context()
