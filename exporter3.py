@@ -289,7 +289,7 @@ def update_info(collector_data, collector_type):
     all_info_metrics[collector_data['uuid']].set(1.0)
 
 def update_static_metrics(collector_data, collector_type):
-    for name, k in static_metrics[collector_type]:
+    for name, k in static_metrics[collector_type].items():
         metric_name = "xen_" + collector_type + "_" + name
         m = all_metrics.get(metric_name)
         if m is None:
