@@ -301,16 +301,16 @@ def load_env():
 
     return xen_host, xen_user, xen_password, verify_ssl, port, poll_time
 
-    def load_config(config_file):
-        global info_labels
-        global static_metrics
-        global extra_metric_labels
+def load_config(config_file):
+    global info_labels
+    global static_metrics
+    global extra_metric_labels
 
-        with open(config_file, "r") as f:
-            config = json.load(f)
-            info_labels = config['info_labels']
-            static_metrics = config['static_metrics']
-            extra_metric_labels = config['extra_metric_labels']
+    with open(config_file, "r") as f:
+        config = json.load(f)
+        info_labels = config['info_labels']
+        static_metrics = config['static_metrics']
+        extra_metric_labels = config['extra_metric_labels']
 
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s:%(funcName)s %(message)s'
