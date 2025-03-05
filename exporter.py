@@ -323,6 +323,7 @@ def customize_host(x, hdata):
     start = time.process_time()
     updates=x.getUpdatesRRD(hdata)
     proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
+    log.info(f"Host Data {hdata}")
 
     # update metrics
     start = time.process_time()
@@ -332,7 +333,6 @@ def customize_host(x, hdata):
 def customize_pool(x, pdata):
     pdata['master'] = x.xenapi.host.get_record(pdata['master']).get('uuid')
     all_data['pool_uuid'] = pdata['uuid']
-    log.info(f"Identified pool {pdata['uuid']}")
 
 def update_objects(x, collector_type):
     ctx = getattr(x.xenapi, collector_type)
