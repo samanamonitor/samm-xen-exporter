@@ -196,18 +196,9 @@ all_metrics = {
     "xen_sr_info": Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels['sr'].keys()))    
 }
 # Will store all metrics specific to labels
-all_info_metrics = {
-    "host": {},
-    "vm": {},
-    "vm_guest_metrics": {},
-    "sr": {}
-}
-all_data = {
-    "host": {},
-    "vm": {},
-    "vm_guest_metrics": {},
-    "sr": {}
-}
+all_info_metrics = {}
+all_data = {}
+
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
 proctime_updatehostmetrics = Gauge("samm_process_time_updatehostmetrics", "SAMM process time updating metrics", ["uuid", "name_label"])
@@ -343,7 +334,7 @@ def update_objects(x, collector_type):
     ctx = getattr(x.xenapi, collector_type)
     for o in ctx.get_all():
         data = ctx.get_record(o)
-        all_data[collector_type.lower()][data['uuid']] = data
+        all_data.setdefault(collector_type.lower(), {})[data['uuid']] = data
 
         customize_func = globals().get("customize_" + collector_type.lower(), lambda x, y: None)
         customize_func(x, data)
