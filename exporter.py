@@ -319,6 +319,7 @@ def customize_vm(x, vmdata):
         update_info(guest_metrics, 'vm_guest_metrics')
 
 def customize_host(x, hdata):
+    hdata['pool_uuid'] = all_data['pool_uuid']
     start = time.process_time()
     updates=x.getUpdatesRRD(hdata)
     proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
@@ -329,7 +330,8 @@ def customize_host(x, hdata):
     proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
 def customize_pool(x, pdata):
-    pass
+    pdata['master'] = x.xenapi.host.get_record(pdata['master']).get('uuid')
+    all_data['pool_uuid'] = pdata['uuid']
 
 def update_objects(x, collector_type):
     ctx = getattr(x.xenapi, collector_type)
@@ -353,8 +355,8 @@ def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time
         while True:
             update_objects(x, 'SR')
             update_objects(x, 'VM')
-            update_objects(x, 'host')
             update_objects(x, 'pool')
+            update_objects(x, 'host')
             pt = time.process_time()
             proctime.labels(xen_host).reset()
             proctime.labels(xen_host).inc(pt)
