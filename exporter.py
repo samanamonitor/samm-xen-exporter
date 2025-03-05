@@ -307,10 +307,10 @@ def load_config(config_file):
         static_metrics = config['static_metrics']
         extra_metric_labels = config['extra_metric_labels']
 
-    all_metrics["xen_host_info"] = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels.get('host', {}).keys())),
-    all_metrics["xen_vm_info"] = Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels.get('vm', {}).keys())),
-    all_metrics["xen_vm_guest_metrics_info"] = Gauge("xen_vm_guest_metrics_info", "Information about guest metrics", list(info_labels.get('vm_guest_metrics', {}).keys())),
-    all_metrics["xen_sr_info"] = Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels.get('sr', {}).keys())),
+    all_metrics["xen_host_info"] = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels.get('host', {}).keys()))
+    all_metrics["xen_vm_info"] = Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels.get('vm', {}).keys()))
+    all_metrics["xen_vm_guest_metrics_info"] = Gauge("xen_vm_guest_metrics_info", "Information about guest metrics", list(info_labels.get('vm_guest_metrics', {}).keys()))
+    all_metrics["xen_sr_info"] = Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels.get('sr', {}).keys()))
     all_metrics["xen_pool_info"] = Gauge("xen_pool_info", "Information about the XenServer Pool", list(info_labels.get('pool', {}).keys()))
 
 
