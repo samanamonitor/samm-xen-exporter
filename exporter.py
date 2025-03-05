@@ -158,7 +158,7 @@ info_labels = {
         "uuid": "uuid",
         "name_label": "name_label",
         "master": "master",
-        "ha_enabled": "ha_enabled"
+        "ha_enabled": "ha_enabled",
         "wlb_enabled": "wlb_enabled",
         "wlb_url": "wlb_url"
     }
