@@ -8,4 +8,4 @@ RUN <<EOF
 python3 -m pip install -r /app/requirements.txt
 EOF
 
-ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT [ "/usr/local/bin/python3", /app/exporter.py ]
