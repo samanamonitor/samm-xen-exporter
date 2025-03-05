@@ -93,109 +93,17 @@ sr_metric_names = [
     "read",
     "write"
 ]
-extra_labels = {
-    "host": [ "name_label" ],
-    "vm": [ "name_label" ],
-    "vm_guest_metrics": []
-}
 
-info_labels = {
-    "vm": {
-        "uuid": "uuid",
-        "name_label": "name_label",
-        "power_state": "power_state",
-        "resident_on": "resident_on"
-    },
-    "vm_guest_metrics": {
-        "uuid": "uuid",
-        "os_version_distro": "os_version.distro",
-        "os_version_major": "os_version.major",
-        "os_version_minor": "os_version.minor",
-        "os_version_build": "os_version.build",
-        "netbios_name": "netbios_name.host_name",
-        "PV_drivers_version_major": "PV_drivers_version.major",
-        "PV_drivers_version_minor": "PV_drivers_version.minor",
-        "PV_drivers_version_micro": "PV_drivers_version.micro",
-        "PV_drivers_version_build": "PV_drivers_version.build"
-    },
-    "host": {
-        "uuid": "uuid",
-        "name_label": "name_label",
-        "API_version_major": "API_version_major",
-        "API_version_minor": "API_version_minor",
-        "API_version_vendor": "API_version_vendor",
-        "product_version": "software_version.product_version",
-        "platform_name": "software_version.platform_name",
-        "platform_version": "software_version.platform_version",
-        "xapi_version": "software_version.xapi",
-        "xapi_build": "software_version.xapi_build",
-        "xen_version": "software_version.xen",
-        "linux_version": "software_version.linux",
-        "network_backend": "software_version.network_backend",
-        "db_schema": "software_version.db_schema",
-        "cpu_count": "cpu_info.cpu_count",
-        "socket_count": "cpu_info.socket_count",
-        "threads_per_core": "cpu_info.threads_per_core",
-        "cpu_vendor": "cpu_info.vendor",
-        "cpu_speed": "cpu_info.speed",
-        "cpu_modelname": "cpu_info.modelname",
-        "multipathing": "other_config.multipathing",
-        "mpath_boot": "other_config.mpath_boot",
-        "hostname": "hostname",
-        "address": "address",
-        "bios_vendor": "bios_strings.bios-vendor",
-        "bios_version": "bios_strings.bios-version",
-        "system_manufacturer": "bios_strings.system-manufacturer",
-        "system_product_name": "bios_strings.system-product-name",
-        "system_serial_number": "bios_strings.system-serial-number",
-        "pool_uuid": "pool_uuid"
-    },
-    "sr": {
-        "uuid": "uuid",
-        "name_label": "name_label",
-        "sr_uuid": "sr_uuid"
-    },
-    "pool": {
-        "uuid": "uuid",
-        "name_label": "name_label",
-        "master": "master",
-        "ha_enabled": "ha_enabled",
-        "wlb_enabled": "wlb_enabled",
-        "wlb_url": "wlb_url"
-    }
-}
-static_metrics = {
-    "vm": {
-        "memory_overhead": "memory_overhead",
-        "memory_static_max": "memory_static_max",
-        "memory_dybamic_max": "memory_dybamic_max",
-        "memory_dynamic_min": "memory_dynamic_min",
-        "memory_static_min": "memory_static_min",
-        "vcpus_at_startup": "VCPUs_at_startup"
-    },
-    "host": {
-        "agent_start_time": "other_config.agent_start_time",
-        "boot_time": "other_config.boot_time",
-        "last_software_update": "last_software_update"
-    },
-    "host_metrics": {
-        "memory_total": "memory_total",
-        "memory_free": "memory_free",
-        "last_updated": "last_updated"
-    },
-    "sr": {
-        "physical_size": "physical_size",
-        "physical_utilisation": "physical_utilisation",
-        "virtual_allocation": "virtual_allocation"
-    }
-}
+info_labels = {}
+static_metrics = {}
+extra_metric_labels = {}
 
 all_metrics = {
-    "xen_host_info": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels['host'].keys())),
-    "xen_vm_info": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels['vm'].keys())),
-    "xen_vm_guest_metrics_info": Gauge("xen_vm_guest_metrics_info", "Information about guest metrics", list(info_labels['vm_guest_metrics'].keys())),
-    "xen_sr_info": Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels['sr'].keys())),
-    "xen_pool_info": Gauge("xen_pool_info", "Information about the XenServer Pool", list(info_labels['pool'].keys()))
+    "xen_host_info": Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels.get('host', {}).keys())),
+    "xen_vm_info": Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels.get('vm', {}).keys())),
+    "xen_vm_guest_metrics_info": Gauge("xen_vm_guest_metrics_info", "Information about guest metrics", list(info_labels.get('vm_guest_metrics', {}).keys())),
+    "xen_sr_info": Gauge("xen_sr_info", "Information about Storage Repositories", list(info_labels.get('sr', {}).keys())),
+    "xen_pool_info": Gauge("xen_pool_info", "Information about the XenServer Pool", list(info_labels.get('pool', {}).keys()))
 }
 # Will store all metrics specific to labels
 all_info_metrics = {}
@@ -262,9 +170,9 @@ def update_host_metrics(legends, values):
         legend = legends[i]
         value = values[i]
         metric_name, labels, label_values, collector_type = legend_to_metric(legend)
-        labels += extra_labels.get(collector_type, [])
+        labels += extra_metric_labels.get(collector_type, [])
         uuid = label_values[0]
-        label_values += [ all_data[collector_type][uuid][prop] for prop in extra_labels[collector_type] ]
+        label_values += [ all_data[collector_type][uuid][prop] for prop in extra_metric_labels[collector_type] ]
         m = all_metrics.get(metric_name)
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, labels)
@@ -393,8 +301,23 @@ def load_env():
 
     return xen_host, xen_user, xen_password, verify_ssl, port, poll_time
 
+    def load_config(config_file):
+        global info_labels
+        global static_metrics
+        global extra_metric_labels
+
+        with open(config_file, "r") as f:
+            config = json.load(f)
+            info_labels = config['info_labels']
+            static_metrics = config['static_metrics']
+            extra_metric_labels = config['extra_metric_labels']
+
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s:%(funcName)s %(message)s'
     logging.basicConfig(stream=sys.stderr, format=FORMAT)
+    config_file = 'config.json'
+    if len(sys.argv) > 1:
+        config_file = sys.argv[1]
+    load_config(config_file)
     main(*load_env())
 
