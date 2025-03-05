@@ -332,6 +332,7 @@ def customize_host(x, hdata):
 def customize_pool(x, pdata):
     pdata['master'] = x.xenapi.host.get_record(pdata['master']).get('uuid')
     all_data['pool_uuid'] = pdata['uuid']
+    log.info(f"Identified pool {pdata['uuid']}")
 
 def update_objects(x, collector_type):
     ctx = getattr(x.xenapi, collector_type)
