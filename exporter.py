@@ -153,6 +153,14 @@ info_labels = {
         "uuid": "uuid",
         "name_label": "name_label",
         "sr_uuid": "sr_uuid"
+    },
+    "pool": {
+        "uuid": "uuid",
+        "name_label": "name_label",
+        "master": "master",
+        "ha_enabled": "ha_enabled"
+        "wlb_enabled": "wlb_enabled",
+        "wlb_url": "wlb_url"
     }
 }
 static_metrics = {
@@ -328,6 +336,9 @@ def customize_host(x, hdata):
     update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
     proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
+def customize_pool(x, pdata):
+    pass
+
 def update_objects(x, collector_type):
     ctx = getattr(x.xenapi, collector_type)
     for o in ctx.get_all():
@@ -351,6 +362,7 @@ def main(xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time
             update_objects(x, 'SR')
             update_objects(x, 'VM')
             update_objects(x, 'host')
+            update_objects(x, 'pool')
             pt = time.process_time()
             proctime.labels(xen_host).reset()
             proctime.labels(xen_host).inc(pt)
