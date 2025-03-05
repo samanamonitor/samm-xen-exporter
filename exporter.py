@@ -186,7 +186,8 @@ static_metrics = {
         "physical_size": "physical_size",
         "physical_utilisation": "physical_utilisation",
         "virtual_allocation": "virtual_allocation"
-    }
+    },
+    "pool": {}
 }
 
 all_metrics = {
