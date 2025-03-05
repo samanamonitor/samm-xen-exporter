@@ -186,8 +186,7 @@ static_metrics = {
         "physical_size": "physical_size",
         "physical_utilisation": "physical_utilisation",
         "virtual_allocation": "virtual_allocation"
-    },
-    "pool": {}
+    }
 }
 
 all_metrics = {
@@ -291,7 +290,7 @@ def update_info(collector_data, collector_type):
     all_info_metrics[collector_data['uuid']].set(1.0)
 
 def update_static_metrics(collector_data, collector_type):
-    for name, k in static_metrics[collector_type].items():
+    for name, k in static_metrics.get(collector_type, {}).items():
         metric_name = "xen_" + collector_type + "_" + name
         m = all_metrics.get(metric_name)
         if m is None:
