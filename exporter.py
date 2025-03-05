@@ -323,7 +323,6 @@ def customize_host(x, hdata):
     start = time.process_time()
     updates=x.getUpdatesRRD(hdata)
     proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
-    log.info(f"Host Data {hdata}")
 
     # update metrics
     start = time.process_time()
