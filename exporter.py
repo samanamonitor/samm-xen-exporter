@@ -314,7 +314,7 @@ def customize_vm(x, vmdata):
 
     if vmdata['guest_metrics'] != "OpaqueRef:NULL":
         guest_metrics = x.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
-        all_data['vm_guest_metrics'][guest_metrics['uuid']] = guest_metrics
+        all_data.setdefault('vm_guest_metrics', {})[guest_metrics['uuid']] = guest_metrics
         update_info(guest_metrics, 'vm_guest_metrics')
 
 def customize_host(x, hdata):
