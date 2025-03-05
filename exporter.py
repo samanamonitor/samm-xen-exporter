@@ -299,6 +299,7 @@ def load_config(config_file):
     global info_labels
     global static_metrics
     global extra_metric_labels
+    global all_metrics
 
     with open(config_file, "r") as f:
         config = json.load(f)
