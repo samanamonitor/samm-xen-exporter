@@ -147,7 +147,8 @@ info_labels = {
         "bios_version": "bios_strings.bios-version",
         "system_manufacturer": "bios_strings.system-manufacturer",
         "system_product_name": "bios_strings.system-product-name",
-        "system_serial_number": "bios_strings.system-serial-number"
+        "system_serial_number": "bios_strings.system-serial-number",
+        "pool_uuid": "pool_uuid"
     },
     "sr": {
         "uuid": "uuid",
