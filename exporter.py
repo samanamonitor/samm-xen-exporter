@@ -259,7 +259,7 @@ def customize_vm(x, vmdata):
 def customize_host(x, hdata):
     hdata['pool_uuid'] = all_data['pool_uuid']
     start = time.process_time()
-    updates=x.getUpdatesRRD(hdata)
+    updates=x.getUpdatesRRD(hdata['uuid'])
     proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
     # update metrics
