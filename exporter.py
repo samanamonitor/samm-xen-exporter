@@ -14,13 +14,14 @@ log = logging.getLogger(__name__)
 xe = None
 
 class Xen:
-    def __init__(self, host, user, password, verify_ssl=True):
+    def __init__(self, host, user, password, verify_ssl=True, login=True):
         self._verify_ssl = verify_ssl
         self._user = user
         self._password = password
         self._host = host
         self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not self._verify_ssl)
-        self.login()
+        if login:
+            self.login()
 
     def login(self):
         try:
