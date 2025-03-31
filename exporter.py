@@ -239,14 +239,14 @@ def update_static_metrics(collector_data, collector_type):
             val = recget(collector_data, k, -1)
             if isinstance(val, DateTime):
                 try:
-                    data = datetime.datetime.strptime(val.value, "%Y%m%dT%H:%M:%SZ").timestamp()
+                    data = datetime.datetime.strptime(val.value, "%Y%m%dT%H:%M:%SZ").timestamp() * 1000
                 except ValueError:
-                    log.error(f"Invalid datetime {val}")
+                    log.error(f"Invalid value at metric={metric_name} tags={collector_data}: datetime {val}")
                     data = -2
             else:
                 data = float(val)
         except Exception as e:
-            log.error(str(e))
+            log.error(f"Invalid value at metric={metric_name} tags={collector_data}: {str(e)}")
             data = float(-3)
         m.labels(collector_data['uuid']).set(data)
 
@@ -266,6 +266,9 @@ def customize_vm(x, vmdata):
         guest_metrics = x.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
         all_data.setdefault('vm_guest_metrics', {})[guest_metrics['uuid']] = guest_metrics
         update_info(guest_metrics, 'vm_guest_metrics')
+        vmdata['guest_metrics'] = guest_metrics['uuid']
+    else:
+        vmdata['guest_metrics'] = ''
 
 def customize_host(x, hdata):
     hdata['pool_uuid'] = all_data['pool_uuid']

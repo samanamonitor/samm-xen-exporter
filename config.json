@@ -4,7 +4,8 @@
             "uuid": "uuid",
             "name_label": "name_label",
             "power_state": "power_state",
-            "resident_on": "resident_on"
+            "resident_on": "resident_on",
+            "guest_metrics": "guest_metrics"
         },
         "vm_guest_metrics": {
             "uuid": "uuid",
@@ -16,7 +17,8 @@
             "PV_drivers_version_major": "PV_drivers_version.major",
             "PV_drivers_version_minor": "PV_drivers_version.minor",
             "PV_drivers_version_micro": "PV_drivers_version.micro",
-            "PV_drivers_version_build": "PV_drivers_version.build"
+            "PV_drivers_version_build": "PV_drivers_version.build",
+            "networks": "networks"
         },
         "host": {
             "uuid": "uuid",
