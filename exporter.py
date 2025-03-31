@@ -240,10 +240,12 @@ def update_static_metrics(collector_data, collector_type):
                 try:
                     data = float(datetime.datetime.strptime(val.value, "%Y%m%dT%H:%M:%SZ"))
                 except ValueError:
+                    log.error(f"Invalid datetime {val}")
                     datetime_obj = -2
             else:
                 data = float(val)
-        except Exception:
+        except Exception as e:
+            log.error(str(e))
             data = float(-3)
         m.labels(collector_data['uuid']).set(data)
 
