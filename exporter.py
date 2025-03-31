@@ -79,8 +79,14 @@ class Xen:
         host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
         if host_ip is None:
             raise ValueError(f"Unable to get IP for host '{host}'")
-        start = int(time.time()) - 10
-        res=urllib.request.urlopen(f"https://{host_ip}/rrd_updates?session_id={self.session_id}&json=true&start={start}&cf={cf}&host=true", **kwargs)
+        qsdata = {
+            "session_id": self.session_id,
+            "json": "true",
+            "start": int(time.time()) - 10
+            "cf": cf,
+            "host": "true"
+        }
+        res=urllib.request.urlopen(f"https://{host_ip}/rrd_updates?{urllib.parse.urlencode(qsdata)}", **kwargs)
         return json.load(res)
 
     def __enter__(self):
