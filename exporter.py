@@ -239,7 +239,7 @@ def update_static_metrics(collector_data, collector_type):
             val = recget(collector_data, k, -1)
             if isinstance(val, DateTime):
                 try:
-                    data = float(datetime.datetime.strptime(val.value, "%Y%m%dT%H:%M:%SZ"))
+                    data = datetime.datetime.strptime(val.value, "%Y%m%dT%H:%M:%SZ").timestamp()
                 except ValueError:
                     log.error(f"Invalid datetime {val}")
                     data = -2
