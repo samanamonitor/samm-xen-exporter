@@ -75,9 +75,6 @@ class Xen:
 
     def getUpdatesRRD(self, hdata, cf='AVERAGE'):
         host = self.xenapi.host.get_by_uuid(hdata['uuid'])
-        kwargs = {}
-        if not self._verify_ssl:
-            kwargs['context'] = ssl._create_unverified_context()
         host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
         if host_ip is None:
             raise ValueError(f"Unable to get IP for host '{host}'")
@@ -92,6 +89,9 @@ class Xen:
         return json.load(self.urlopen(url, qsdata))
 
     def urlopen(self, url, qsdata):
+        kwargs = {}
+        if not self._verify_ssl:
+            kwargs['context'] = ssl._create_unverified_context()
         try:
             res=urllib.request.urlopen(url, **kwargs)
         except urllib.error.HTTPError as e:
