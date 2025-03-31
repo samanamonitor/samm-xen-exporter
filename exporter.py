@@ -84,7 +84,7 @@ class Xen:
     def urlopenhost(self, hostuuid, path, qsdata):
         host = self.xenapi.host.get_by_uuid(hostuuid)
         host_interface = self.xenapi.host.get_management_interface(host)
-        host_ip = self.xenapi.PIF.get_IP()
+        host_ip = self.xenapi.PIF.get_IP(host_interface)
         if host_ip is None:
             raise ValueError(f"Unable to get IP for host '{host}'")
         url=f"https://{host_ip}{path}?{urllib.parse.urlencode(qsdata)}"
