@@ -88,7 +88,7 @@ class Xen:
         if host_ip is None:
             raise ValueError(f"Unable to get IP for host '{host}'")
         url=f"https://{host_ip}{path}?{urllib.parse.urlencode(qsdata)}"
-        self.urlopen(url)
+        return self.urlopen(url)
 
 
     def urlopen(self, url):
