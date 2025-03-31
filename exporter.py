@@ -8,6 +8,7 @@ import urllib.request
 import ssl
 import json
 import logging
+from xmlrpc.client import DateTime
 
 log = logging.getLogger(__name__)
 
@@ -234,9 +235,16 @@ def update_static_metrics(collector_data, collector_type):
         if m is None:
             m = all_metrics[metric_name] = Gauge(metric_name, metric_name, [ 'uuid' ])
         try:
-            data = float(recget(collector_data, k, -1))
+            val = recget(collector_data, k, -1)
+            if isinstance(val, DateTime):
+                try:
+                    data = float(datetime.datetime.strptime(val.value, "%Y%m%dT%H:%M:%SZ"))
+                except ValueError:
+                    datetime_obj = -2
+            else:
+                data = float(val)
         except Exception:
-            data = float(-1)
+            data = float(-3)
         m.labels(collector_data['uuid']).set(data)
 
 
