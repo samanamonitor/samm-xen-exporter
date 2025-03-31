@@ -16,20 +16,30 @@ xe = None
 class Xen:
     def __init__(self, host, user, password, verify_ssl=True):
         self._verify_ssl = verify_ssl
-        self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not verify_ssl)
+        self._user = user
+        self._password = password
+        self._host = host
+        self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not self._verify_ssl)
+        self.login()
+
+    def login(self):
         try:
-            self.session.xenapi.login_with_password(user, password)
+            self.session.xenapi.login_with_password(self._user, self._password)
         except XenAPI.XenAPI.Failure as e:
             d = eval(str(e))
             if len(d) == 2:
                 if d[0] == 'HOST_IS_SLAVE':
-                    print(f"WARNING: This host is slave. Connecting to '{d[1]}'")
-                    self.session = XenAPI.Session(f"https://{d[1]}", ignore_ssl=not verify_ssl)
-                    self.session.xenapi.login_with_password(user, password)
+                    self._host = d[1]
+                    print(f"WARNING: This host is slave. Connecting to '{self._host}'")
+                    self.session = XenAPI.Session(f"https://{d[1]}", ignore_ssl=not self._verify_ssl)
+                    self.session.xenapi.login_with_password(self._user, self._password)
             else:
                 raise
-        self.session_id = self.session._session
-        log.info(f"Logged in to Xen {host} with username {user}.")
+        log.info(f"Logged in to Xen {self._host} with username {self._user}.")
+
+    @property
+    def session_id(self):
+        return self.session._session
 
     @property
     def xenapi(self):
