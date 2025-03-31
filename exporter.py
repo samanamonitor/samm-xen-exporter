@@ -20,6 +20,8 @@ class Xen:
         self._password = password
         self._host = host
         self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not self._verify_ssl)
+        self._retries = 0
+        self._maxretries = 2
         if login:
             self.login()
 
@@ -86,8 +88,21 @@ class Xen:
             "cf": cf,
             "host": "true"
         }
-        res=urllib.request.urlopen(f"https://{host_ip}/rrd_updates?{urllib.parse.urlencode(qsdata)}", **kwargs)
-        return json.load(res)
+        url=f"https://{host_ip}/rrd_updates?{urllib.parse.urlencode(qsdata)}"
+        return json.load(self.urlopen(url, qsdata))
+
+    def urlopen(self, url, qsdata):
+        try:
+            res=urllib.request.urlopen(url, **kwargs)
+        except urllib.error.HTTPError as e:
+            if self._retries > self._maxretries:
+                raise
+            self._retries += 1
+            if e.status == 401:
+                self.login()
+                return self.getUpdatesRRD(hdata)
+        self._retries = 0
+        return res
 
     def __enter__(self):
         return self
