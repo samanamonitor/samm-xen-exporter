@@ -48,36 +48,30 @@ class Xen:
     def xenapi(self):
         return self.session.xenapi
 
-    def getHostRRD(self, host):
+    def getHostRRD(self, hostuuid):
         # get full RRD
-        kwargs = {}
-        if not self._verify_ssl:
-              kwargs['context'] = ssl._create_unverified_context()
-        host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
-        if host_ip is None:
-              raise ValueError(f"Unable to get IP for host '{host}'")
-        res=urllib.request.urlopen(f"https://{host_ip}/host_rrd?session_id={self.session_id}&json=true", **kwargs)
-        return json.load(res)
+        qsdata = {
+            "session_id": self.session_id,
+            "json": "true"
+        }
+        return json.load(self.urlopenhost(hostuuid, "/host_rrd", qsdata))
 
-    def getVmRRD(self, host, vm):
-        #xen.xenapi.host.get_resident_VMs(xen.xenapi.host.get_all()[0])[0])['uuid']
-        kwargs = {}
-        if not self._verify_ssl:
-            kwargs['context'] = ssl._create_unverified_context()
-        vmuuid=self.xenapi.VM.get_record(vm).get('uuid')
-        if vmuuid is None:
-            raise ValueError(f"VM '{vm}' could not be found")
-        host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
-        if host_ip is None:
-            raise ValueError(f"Unable to get IP for host '{host}'")
-        res=urllib.request.urlopen(f"https://{host_ip}/vm_rrd?session_id={self.session_id}&uuid={vmuuid}&json=true", **kwargs)
-        return json.load(res)
+    def getVmRRD(self, vmuuid):
+        vm = self.xenapi.VM.get_by_uuid(vmuuid)
+        if vm == "OpaqueRef:NULL":
+            raise KeyError(f"VM {vmuuid} invalid.")
+        resident_on = self.xenapi.VM.get_resident_on(vm)
+        if resident_on == "OpaqueRef:NULL":
+            return {}
+        hostuuid = self.xenapi.host.get_uuid(resident_on)
+        qsdata = {
+            "session_id": self.session_id,
+            "uuid": vmuuid,
+            "json": "true"
+        }
+        return json.load(self.urlopenhost(hostuuid, "/vm_rrd", qsdata))
 
-    def getUpdatesRRD(self, hdata, cf='AVERAGE'):
-        host = self.xenapi.host.get_by_uuid(hdata['uuid'])
-        host_ip = self.xenapi.PIF.get_record(self.xenapi.host.get_management_interface(host)).get('IP')
-        if host_ip is None:
-            raise ValueError(f"Unable to get IP for host '{host}'")
+    def getUpdatesRRD(self, hostuuid, cf='AVERAGE'):
         qsdata = {
             "session_id": self.session_id,
             "json": "true",
@@ -85,10 +79,19 @@ class Xen:
             "cf": cf,
             "host": "true"
         }
-        url=f"https://{host_ip}/rrd_updates?{urllib.parse.urlencode(qsdata)}"
-        return json.load(self.urlopen(url, qsdata))
+        return json.load(self.urlopenhost(hostuuid, "/rrd_updates", qsdata))
 
-    def urlopen(self, url, qsdata):
+    def urlopenhost(self, hostuuid, path, qsdata):
+        host = self.xenapi.host.get_by_uuid(hostuuid)
+        host_interface = self.xenapi.host.get_management_interface(host)
+        host_ip = self.xenapi.PIF.get_IP()
+        if host_ip is None:
+            raise ValueError(f"Unable to get IP for host '{host}'")
+        url=f"https://{host_ip}{path}?{urllib.parse.urlencode(qsdata)}"
+        self.urlopen(url)
+
+
+    def urlopen(self, url):
         kwargs = {}
         if not self._verify_ssl:
             kwargs['context'] = ssl._create_unverified_context()
@@ -100,7 +103,7 @@ class Xen:
             self._retries += 1
             if e.status == 401:
                 self.login()
-                return self.getUpdatesRRD(hdata)
+                return self.getUpdatesRRD(hdata['uuid'])
         self._retries = 0
         return res
 
