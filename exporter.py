@@ -242,7 +242,7 @@ def update_static_metrics(collector_data, collector_type):
                     data = float(datetime.datetime.strptime(val.value, "%Y%m%dT%H:%M:%SZ"))
                 except ValueError:
                     log.error(f"Invalid datetime {val}")
-                    datetime_obj = -2
+                    data = -2
             else:
                 data = float(val)
         except Exception as e:
