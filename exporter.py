@@ -288,7 +288,11 @@ def customize_pool(x, pdata):
 def update_objects(x, collector_type):
     ctx = getattr(x.xenapi, collector_type)
     for o in ctx.get_all():
-        data = ctx.get_record(o)
+        try:
+            data = ctx.get_record(o)
+        except Exception as e:
+            log.exception(e)
+            continue
         all_data.setdefault(collector_type.lower(), {})[data['uuid']] = data
 
         customize_func = globals().get("customize_" + collector_type.lower(), lambda x, y: None)
