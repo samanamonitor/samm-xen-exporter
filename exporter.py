@@ -24,6 +24,7 @@ class Xen:
         self.session = XenAPI.Session(f"https://{host}", ignore_ssl=not self._verify_ssl)
         self._retries = 0
         self._maxretries = 2
+        self._timeout_retry = 30
         if login:
             self.login()
 
@@ -95,19 +96,30 @@ class Xen:
 
     def urlopen(self, url):
         kwargs = {}
+        if self._retries > self._maxretries:
+            raise Exception("Number of retries exceded. Something is wrong.")
         if not self._verify_ssl:
             kwargs['context'] = ssl._create_unverified_context()
         try:
             res=urllib.request.urlopen(url, **kwargs)
+            self._retries = 0
+            return res
         except urllib.error.HTTPError as e:
-            if self._retries > self._maxretries:
-                raise
             self._retries += 1
             if e.status == 401:
                 self.login()
-                return self.getUpdatesRRD(hdata['uuid'])
-        self._retries = 0
-        return res
+                return self.urlopen(url)
+            raise
+        except urllib.error.URLError as e:
+            self._retries += 1
+            log.exception(e)
+            time.sleep(self._timeout_retry)
+            return self.urlopen(url)
+        except Exception as e:
+            log.exception(e)
+            log.error(f"Unknown error {str(e)}")
+            raise
+
 
     def __enter__(self):
         return self
@@ -136,9 +148,34 @@ static_metrics = {}
 extra_metric_labels = {}
 
 all_metrics = {}
+# all_metrics structure
+#{
+#    "(metric_name string)": { (instrument Gauge, Counter or other)}
+#}
+
+
 # Will store all metrics specific to labels
 all_info_metrics = {}
 all_data = {}
+# all_data structure
+#{
+#   "pool_uuid": "(string)",
+#   "vm_guest_metrics": {
+#      "(uuid string)": { (class VM_guest_metrics) }
+#   },
+#   "sr": {
+#      "(uuid string)": { (class SR) }
+#   },
+#   "vm": {
+#      "(uuid string)": { (class VM) }
+#   },
+#   "pool": {
+#      "(uuid string)": { (class pool) }
+#   },
+#   "host": {
+#      "(uuid string)": { (class host) }
+#   }
+#}
 
 proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
 proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
@@ -273,7 +310,13 @@ def customize_vm(x, vmdata):
 def customize_host(x, hdata):
     hdata['pool_uuid'] = all_data['pool_uuid']
     start = time.process_time()
-    updates=x.getUpdatesRRD(hdata['uuid'])
+    try:
+        updates=x.getUpdatesRRD(hdata['uuid'])
+    except Exception as e:
+        # TODO: Something went wrong and no data was generated. Need to create
+        #       a metric that will inform the graphical interface that this 
+        #       exporter need to be reviewed
+        return
     proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
     # update metrics
