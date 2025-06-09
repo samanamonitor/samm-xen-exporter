@@ -215,11 +215,13 @@ class SammXenExporter:
             log.warning(f"Invalid loglevel defined in XEN_LOGLEVEL={self.loglevel}")
 
         try:
-            if port is None:
-                self.port = os.getenv("XEN_COLPORT", '8000')
-            else:
+            if isinstance(port, int):
                 self.port = port
-            port = int(port, 10)
+            elif isinstance(port, str):
+                self.port = int(port, 10)
+            else:
+                self.port = os.getenv("XEN_COLPORT", '8000')
+                self.port = int(self.port, 10)
         except ValueError:
             log.warning(f"Invalid port defined in XEN_COLPORT={port} variable. Assuming default 8000")
             port = 8000
