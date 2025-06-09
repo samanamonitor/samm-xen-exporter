@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 xe = None
 
 class Xen:
-    def __init__(self, host, user, password, verify_ssl=True, login=True):
+    def __init__(self, host, user, password, verify_ssl=True):
         self._verify_ssl = verify_ssl
         self._user = user
         self._password = password
@@ -27,8 +27,6 @@ class Xen:
         self._retries = 0
         self._maxretries = 2
         self._timeout_retry = 30
-        if login:
-            self.login()
 
     def login(self):
         try:
@@ -124,6 +122,7 @@ class Xen:
 
 
     def __enter__(self):
+        self.login()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -188,7 +187,53 @@ def legend_to_metric(legend):
 
 
 class SammXenExporter:
-    def __init__(self):
+    def __init__(self, xen_host=None, xen_user=None, xen_password=None, verify_ssl=None, port=None, poll_time=None, loglevel=None):
+        self.xen_host = xen_host
+        if xen_host is None:
+            self.xen_host = os.getenv("XEN_HOST", "localhost")
+
+        self.xen_user = xen_user
+        if xen_user is None:
+            self.xen_user = os.getenv("XEN_USER", "root")
+
+        self.xen_password = xen_password
+        if xen_password is None:
+            self.xen_password = os.getenv("XEN_PASSWORD", "")
+
+        self.verify_ssl = verify_ssl
+        if verify_ssl is None:
+            self.verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
+
+
+        try:
+            if loglevel is None:
+                log.setLevel(os.getenv("XEN_LOGLEVEL", "INFO"))
+            else:
+                log.setLevel(loglevel)
+        except ValueError:
+            log.setLevel('INFO')
+            log.warning(f"Invalid loglevel defined in XEN_LOGLEVEL={self.loglevel}")
+
+        try:
+            if port is None:
+                self.port = os.getenv("XEN_COLPORT", '8000')
+            else:
+                self.port = port
+            port = int(port, 10)
+        except ValueError:
+            log.warning(f"Invalid port defined in XEN_COLPORT={port} variable. Assuming default 8000")
+            port = 8000
+
+        try:
+            if poll_time is None:
+                self.poll_time = os.getenv("XEN_POLLTIME", '60')
+            else:
+                self.poll_time = poll_time
+            poll_time = int(poll_time, 10)
+        except ValueError:
+            log.warning(f"Invalid poll time defined in XEN_POLLTIME={poll_time}. Assuming default 60")
+            poll_time = 60
+
         self.sr_metric_names = [
             "avgqu",
             "inflight",
@@ -237,6 +282,7 @@ class SammXenExporter:
         self.proctime = Counter("samm_process_time", "SAMM Xen exporter process time in seconds", ["xen_host"])
         self.proctime_rrd = Gauge("samm_process_time_pullrrd", "SAMM process time collecting RRD data", ["uuid", "name_label"])
         self.proctime_updatehostmetrics = Gauge("samm_process_time_updatehostmetrics", "SAMM process time updating metrics", ["uuid", "name_label"])
+        self.x = Xen(self.xen_host, self.xen_user, self.xen_password, self.verify_ssl)
 
     def update_host_metrics(self, legends, values):
         for i in range(len(legends)):
@@ -349,47 +395,21 @@ class SammXenExporter:
             self.update_static_metrics(data, collector_type.lower())
 
 
-    def run(self, xen_host="", xen_user="", xen_password="", verify_ssl=True, port=8000, poll_time=60):
-        xen_host = os.getenv("XEN_HOST", "localhost")
-        xen_user = os.getenv("XEN_USER", "root")
-        xen_password = os.getenv("XEN_PASSWORD", "")
-        verify_ssl = True if os.getenv("XEN_SSL_VERIFY", "true") == "true" else False
-        loglevel = os.getenv("XEN_LOGLEVEL", "INFO")
-        port = os.getenv("XEN_COLPORT", '8000')
-        poll_time = os.getenv("XEN_POLLTIME", '60')
-
-        try:
-            log.setLevel(loglevel)
-        except ValueError:
-            log.setLevel('INFO')
-            log.warning(f"Invalid loglevel defined in XEN_LOGLEVEL={loglevel}")
-
-        try:
-            port = int(port, 10)
-        except ValueError:
-            log.warning(f"Invalid port defined in XEN_COLPORT={port} variable. Assuming default 8000")
-            port = 8000
-
-        try:
-            poll_time = int(poll_time, 10)
-        except ValueError:
-            log.warning(f"Invalid poll time defined in XEN_POLLTIME={poll_time}. Assuming default 60")
-            poll_time = 60
-
-        server, _ = start_http_server(port)
+    def run(self):
+        server, _ = start_http_server(self.port)
         server.RequestHandlerClass = _SammPromHandler
-        log.info(f"Started exporter server on port {port}")
-        with Xen(xen_host, xen_user, xen_password, verify_ssl) as x:
+        log.info(f"Started exporter server on port {self.port}")
+        with self.x:
             while True:
                 self.update_objects(x, 'pool')
                 self.update_objects(x, 'SR')
                 self.update_objects(x, 'VM')
                 self.update_objects(x, 'host')
                 pt = time.process_time()
-                self.proctime.labels(xen_host).reset()
-                self.proctime.labels(xen_host).inc(pt)
+                self.proctime.labels(self.xen_host).reset()
+                self.proctime.labels(self.xen_host).inc(pt)
                 log.info(f"Finished collecting data from xenserver. ({pt})")
-                time.sleep(poll_time)
+                time.sleep(self.poll_time)
 
     def load_config(self, config_file):
 
