@@ -51,7 +51,7 @@ class Xen:
     def xenapi(self):
         return self.session.xenapi
 
-    def getHostRRD(self, hostuuid):
+    def getHostRRD(self, hostuuid: str) -> dict:
         # get full RRD
         qsdata = {
             "session_id": self.session_id,
@@ -59,7 +59,7 @@ class Xen:
         }
         return json.load(self.urlopenhost(hostuuid, "/host_rrd", qsdata))
 
-    def getVmRRD(self, vmuuid):
+    def getVmRRD(self, vmuuid: str) -> dict:
         vm = self.xenapi.VM.get_by_uuid(vmuuid)
         if vm == "OpaqueRef:NULL":
             raise KeyError(f"VM {vmuuid} invalid.")
@@ -74,7 +74,7 @@ class Xen:
         }
         return json.load(self.urlopenhost(hostuuid, "/vm_rrd", qsdata))
 
-    def getUpdatesRRD(self, hostuuid, cf='AVERAGE'):
+    def getUpdatesRRD(self, hostuuid: str, cf: str = 'AVERAGE') -> dict:
         qsdata = {
             "session_id": self.session_id,
             "json": "true",
@@ -84,7 +84,7 @@ class Xen:
         }
         return json.load(self.urlopenhost(hostuuid, "/rrd_updates", qsdata))
 
-    def urlopenhost(self, hostuuid, path, qsdata):
+    def urlopenhost(self, hostuuid: str, path: str, qsdata: dict) -> dict:
         host = self.xenapi.host.get_by_uuid(hostuuid)
         host_interface = self.xenapi.host.get_management_interface(host)
         host_ip = self.xenapi.PIF.get_IP(host_interface)
@@ -94,7 +94,7 @@ class Xen:
         return self.urlopen(url)
 
 
-    def urlopen(self, url):
+    def urlopen(self, url: str) -> dict:
         kwargs = {}
         if self._retries > self._maxretries:
             raise Exception("Number of retries exceded. Something is wrong.")
@@ -288,10 +288,10 @@ def update_static_metrics(collector_data, collector_type):
         m.labels(collector_data['uuid']).set(data)
 
 
-def customize_sr(x, srdata):
+def customize_sr(x: Xen, srdata: dict):
     srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
 
-def customize_vm(x, vmdata):
+def customize_vm(x: Xen, vmdata: dict):
     # TODO: generalize the function that resolves references
     # resolve reference
     if vmdata['resident_on'] == 'OpaqueRef:NULL':
@@ -307,7 +307,7 @@ def customize_vm(x, vmdata):
     else:
         vmdata['guest_metrics'] = ''
 
-def customize_host(x, hdata):
+def customize_host(x: Xen, hdata: dict):
     hdata['pool_uuid'] = all_data['pool_uuid']
     start = time.process_time()
     try:
@@ -324,11 +324,11 @@ def customize_host(x, hdata):
     update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
     proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
-def customize_pool(x, pdata):
+def customize_pool(x: Xen, pdata: dict):
     pdata['master'] = x.xenapi.host.get_record(pdata['master']).get('uuid')
     all_data['pool_uuid'] = pdata['uuid']
 
-def update_objects(x, collector_type):
+def update_objects(x: Xen, collector_type: str):
     ctx = getattr(x.xenapi, collector_type)
     for o in ctx.get_all():
         try:
