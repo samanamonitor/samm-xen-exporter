@@ -349,7 +349,7 @@ class SammXenExporter:
             self.update_static_metrics(data, collector_type.lower())
 
 
-    def run(self, xen_host, xen_user, xen_password, verify_ssl=True, port=8000, poll_time=60):
+    def run(self, xen_host="", xen_user="", xen_password="", verify_ssl=True, port=8000, poll_time=60):
         xen_host = os.getenv("XEN_HOST", "localhost")
         xen_user = os.getenv("XEN_USER", "root")
         xen_password = os.getenv("XEN_PASSWORD", "")
