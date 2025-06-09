@@ -343,30 +343,30 @@ class SammXenExporter:
             m.labels(collector_data['uuid']).set(data)
 
 
-    def customize_sr(self, x: Xen, srdata: dict):
+    def customize_sr(self, srdata: dict):
         srdata['sr_uuid'] = srdata['uuid'].split('-')[0]
 
-    def customize_vm(self, x: Xen, vmdata: dict):
+    def customize_vm(self, vmdata: dict):
         # TODO: generalize the function that resolves references
         # resolve reference
         if vmdata['resident_on'] == 'OpaqueRef:NULL':
             vmdata['resident_on'] = ''
         else:
-            vmdata['resident_on'] = x.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
+            vmdata['resident_on'] = self.x.xenapi.host.get_record(vmdata['resident_on']).get('uuid', 'none')
 
         if vmdata['guest_metrics'] != "OpaqueRef:NULL":
-            guest_metrics = x.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
+            guest_metrics = self.x.xenapi.VM_guest_metrics.get_record(vmdata['guest_metrics'])
             self.all_data.setdefault('vm_guest_metrics', {})[guest_metrics['uuid']] = guest_metrics
             self.update_info(guest_metrics, 'vm_guest_metrics')
             vmdata['guest_metrics'] = guest_metrics['uuid']
         else:
             vmdata['guest_metrics'] = ''
 
-    def customize_host(self, x: Xen, hdata: dict):
+    def customize_host(self, hdata: dict):
         hdata['pool_uuid'] = self.all_data['pool_uuid']
         start = time.process_time()
         try:
-            updates=x.getUpdatesRRD(hdata['uuid'])
+            updates=self.x.getUpdatesRRD(hdata['uuid'])
         except Exception as e:
             # TODO: Something went wrong and no data was generated. Need to create
             #       a metric that will inform the graphical interface that this 
@@ -379,12 +379,12 @@ class SammXenExporter:
         self.update_host_metrics(updates['meta']['legend'], updates['data'][0]['values'])
         self.proctime_updatehostmetrics.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
-    def customize_pool(self, x: Xen, pdata: dict):
-        pdata['master'] = x.xenapi.host.get_record(pdata['master']).get('uuid')
+    def customize_pool(self, pdata: dict):
+        pdata['master'] = self.x.xenapi.host.get_record(pdata['master']).get('uuid')
         self.all_data['pool_uuid'] = pdata['uuid']
 
-    def update_objects(self, x: Xen, collector_type: str):
-        ctx = getattr(x.xenapi, collector_type)
+    def update_objects(self, collector_type: str):
+        ctx = getattr(self.x.xenapi, collector_type)
         for o in ctx.get_all():
             try:
                 data = ctx.get_record(o)
@@ -394,7 +394,7 @@ class SammXenExporter:
             self.all_data.setdefault(collector_type.lower(), {})[data['uuid']] = data
 
             customize_func = globals().get("customize_" + collector_type.lower(), lambda x, y: None)
-            customize_func(x, data)
+            customize_func(data)
             self.update_info(data, collector_type.lower())
             self.update_static_metrics(data, collector_type.lower())
 
@@ -405,10 +405,10 @@ class SammXenExporter:
         log.info(f"Started exporter server on port {self.port}")
         with self.x:
             while True:
-                self.update_objects(x, 'pool')
-                self.update_objects(x, 'SR')
-                self.update_objects(x, 'VM')
-                self.update_objects(x, 'host')
+                self.update_objects(self.x, 'pool')
+                self.update_objects(self.x, 'SR')
+                self.update_objects(self.x, 'VM')
+                self.update_objects(self.x, 'host')
                 pt = time.process_time()
                 self.proctime.labels(self.xen_host).reset()
                 self.proctime.labels(self.xen_host).inc(pt)
