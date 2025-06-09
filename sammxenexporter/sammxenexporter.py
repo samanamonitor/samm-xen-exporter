@@ -15,7 +15,16 @@ import datetime
 
 log = logging.getLogger(__name__)
 
-xe = None
+sr_metric_names = [
+            "avgqu",
+            "inflight",
+            "io",
+            "iops",
+            "iowait",
+            "latency",
+            "read",
+            "write"
+        ]
 
 class Xen:
     def __init__(self, host, user, password, verify_ssl=True):
@@ -237,17 +246,6 @@ class SammXenExporter:
         except ValueError:
             log.warning(f"Invalid poll time defined in XEN_POLLTIME={poll_time}. Assuming default 60")
             poll_time = 60
-
-        self.sr_metric_names = [
-            "avgqu",
-            "inflight",
-            "io",
-            "iops",
-            "iowait",
-            "latency",
-            "read",
-            "write"
-        ]
 
         self.info_labels = {}
         self.static_metrics = {}
