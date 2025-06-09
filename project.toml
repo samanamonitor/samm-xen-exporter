@@ -1,0 +1,11 @@
+[build-system]
+requires = [ "setuptools>=40.8.0" ]
+
+[project]
+name = "samm-xen-exporter"
+dynamic = ["version"]
+dependencies = [
+	"XenAPI",
+	"prometheus_client"
+	]
+
