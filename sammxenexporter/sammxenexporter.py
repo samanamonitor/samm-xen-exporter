@@ -395,9 +395,9 @@ class SammXenExporter:
 
         with open(config_file, "r") as f:
             self.config = json.load(f)
-            self.info_labels = config['info_labels']
-            self.static_metrics = config['static_metrics']
-            self.extra_metric_labels = config['extra_metric_labels']
+            self.info_labels = self.config['info_labels']
+            self.static_metrics = self.config['static_metrics']
+            self.extra_metric_labels = self.config['extra_metric_labels']
 
         self.all_metrics["xen_host_info"] = Gauge("xen_host_info", "Information about the XenServer Host", list(info_labels.get('host', {}).keys()))
         self.all_metrics["xen_vm_info"] = Gauge("xen_vm_info", "Information about Virtual Machines", list(info_labels.get('vm', {}).keys()))
