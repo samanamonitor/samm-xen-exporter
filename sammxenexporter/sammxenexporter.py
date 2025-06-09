@@ -227,11 +227,13 @@ class SammXenExporter:
             port = 8000
 
         try:
-            if poll_time is None:
-                self.poll_time = os.getenv("XEN_POLLTIME", '60')
-            else:
+            if isinstance(poll_time, int):
                 self.poll_time = poll_time
-            poll_time = int(poll_time, 10)
+            elif isinstance(poll_time, str):
+                self.poll_time = int(poll_time, 10)
+            else:
+                self.poll_time = os.getenv("XEN_POLLTIME", '60')
+                self.poll_time = int(poll_time, 10)
         except ValueError:
             log.warning(f"Invalid poll time defined in XEN_POLLTIME={poll_time}. Assuming default 60")
             poll_time = 60
