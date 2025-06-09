@@ -257,7 +257,7 @@ class SammXenExporter:
         for k, v in self.info_labels[collector_type].items():
             label_values.append(recget(collector_data, v, "none"))
         if collector_data['uuid'] in self.all_info_metrics:
-            old_metric = all_info_metrics[collector_data['uuid']]
+            old_metric = self.all_info_metrics[collector_data['uuid']]
 
         if metric_name not in self.all_metrics:
             raise KeyError(f"Metric {metric_name} not defined in all_metrics")
