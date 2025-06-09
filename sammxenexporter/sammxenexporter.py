@@ -393,7 +393,7 @@ class SammXenExporter:
                 continue
             self.all_data.setdefault(collector_type.lower(), {})[data['uuid']] = data
 
-            customize_func = getattr(self).get("customize_" + collector_type.lower(), lambda x: None)
+            customize_func = getattr(self, "customize_" + collector_type.lower(), lambda x: None)
             customize_func(data)
             self.update_info(data, collector_type.lower())
             self.update_static_metrics(data, collector_type.lower())
