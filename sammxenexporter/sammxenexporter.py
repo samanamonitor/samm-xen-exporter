@@ -405,10 +405,10 @@ class SammXenExporter:
         log.info(f"Started exporter server on port {self.port}")
         with self.x:
             while True:
-                self.update_objects(self.x, 'pool')
-                self.update_objects(self.x, 'SR')
-                self.update_objects(self.x, 'VM')
-                self.update_objects(self.x, 'host')
+                self.update_objects('pool')
+                self.update_objects('SR')
+                self.update_objects('VM')
+                self.update_objects('host')
                 pt = time.process_time()
                 self.proctime.labels(self.xen_host).reset()
                 self.proctime.labels(self.xen_host).inc(pt)
