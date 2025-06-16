@@ -369,6 +369,7 @@ class SammXenExporter:
             # TODO: Something went wrong and no data was generated. Need to create
             #       a metric that will inform the graphical interface that this 
             #       exporter need to be reviewed
+            log.exception(e)
             return
         self.proctime_rrd.labels(hdata['uuid'], hdata['name_label']).set(time.process_time() - start)
 
