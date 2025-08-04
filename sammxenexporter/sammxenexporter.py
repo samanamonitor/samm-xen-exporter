@@ -44,12 +44,21 @@ class Xen:
             d = eval(str(e))
             if len(d) == 2:
                 if d[0] == 'HOST_IS_SLAVE':
+                    if self._retries > self._maxretries:
+                        raise
+                    self._retries += 1
                     self._host = d[1]
                     print(f"WARNING: This host is slave. Connecting to '{self._host}'")
                     self.session = XenAPI.Session(f"https://{d[1]}", ignore_ssl=not self._verify_ssl)
-                    self.session.xenapi.login_with_password(self._user, self._password)
+                    self.login()
             else:
+                log.error(f"Unable to login to {self._host}. {str(e)}")
                 raise
+        except Exception as e:
+                log.error(f"Unable to login to {self._host}. {str(e)}")
+                log.exception(e)
+                raise
+        self._retries = 0
         log.info(f"Logged in to Xen {self._host} with username {self._user}.")
 
     @property
@@ -404,14 +413,19 @@ class SammXenExporter:
         log.info(f"Started exporter server on port {self.port}")
         with self.x:
             while True:
-                self.update_objects('pool')
-                self.update_objects('SR')
-                self.update_objects('VM')
-                self.update_objects('host')
-                pt = time.process_time()
-                self.proctime.labels(self.xen_host).reset()
-                self.proctime.labels(self.xen_host).inc(pt)
-                log.info(f"Finished collecting data from xenserver. ({pt})")
+                try:
+                    self.update_objects('pool')
+                    self.update_objects('SR')
+                    self.update_objects('VM')
+                    self.update_objects('host')
+                    pt = time.process_time()
+                    self.proctime.labels(self.xen_host).reset()
+                    self.proctime.labels(self.xen_host).inc(pt)
+                    self.all_metrics["xen_exporter_up"].labels(self._host).set(1)
+                    log.info(f"Finished collecting data from xenserver. ({pt})")
+                except Exception as e:
+                    log.exception(e)
+                    self.all_metrics["xen_exporter_up"].labels(self._host).set(0)
                 time.sleep(self.poll_time)
 
     def load_config(self, config_file):
@@ -427,4 +441,5 @@ class SammXenExporter:
         self.all_metrics["xen_vm_guest_metrics_info"] = Gauge("xen_vm_guest_metrics_info", "Information about guest metrics", list(self.info_labels.get('vm_guest_metrics', {}).keys()))
         self.all_metrics["xen_sr_info"] = Gauge("xen_sr_info", "Information about Storage Repositories", list(self.info_labels.get('sr', {}).keys()))
         self.all_metrics["xen_pool_info"] = Gauge("xen_pool_info", "Information about the XenServer Pool", list(self.info_labels.get('pool', {}).keys()))
+        self.all_metrics["xen_exporter_up"] = Gauge("xen_exporter_up", "Exporter status", [ "instance" ])
 
