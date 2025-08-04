@@ -421,11 +421,11 @@ class SammXenExporter:
                     pt = time.process_time()
                     self.proctime.labels(self.xen_host).reset()
                     self.proctime.labels(self.xen_host).inc(pt)
-                    self.all_metrics["xen_exporter_up"].labels(self._host).set(1)
+                    self.all_metrics["xen_exporter_up"].labels(self.x._host).set(1)
                     log.info(f"Finished collecting data from xenserver. ({pt})")
                 except Exception as e:
                     log.exception(e)
-                    self.all_metrics["xen_exporter_up"].labels(self._host).set(0)
+                    self.all_metrics["xen_exporter_up"].labels(self.x._host).set(0)
                 time.sleep(self.poll_time)
 
     def load_config(self, config_file):
